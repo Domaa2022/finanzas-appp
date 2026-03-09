@@ -6,6 +6,7 @@ import { RecentTransactions } from '@/components/dashboard/RecentTransactions'
 import { SavingsOverview } from '@/components/dashboard/SavingsOverview'
 import { IncomeExpenseChart } from '@/components/dashboard/IncomeExpenseChart'
 import { QuincenaCard } from '@/components/dashboard/QuincenaCard'
+import { SobranteMesCard } from '@/components/dashboard/SobranteMesCard'
 import { Card } from '@/components/ui/Card'
 
 interface QuincenaData {
@@ -28,6 +29,8 @@ interface Props {
   ingresosMes: number
   gastosMes: number
   ahorroMes: number
+  sobranteMes: number
+  ultimoIngresoId: string | null
   recentTransactions: RecentTransaction[]
   goals: SavingsGoal[]
   chartData: { mes: string; ingresos: number; gastos: number }[]
@@ -39,11 +42,15 @@ export default function DashboardClientPage({
   ingresosMes,
   gastosMes,
   ahorroMes,
+  sobranteMes,
+  ultimoIngresoId,
   recentTransactions,
   goals,
   chartData,
   quincenaData,
 }: Props) {
+  const hayMetas = goals.some((g: any) => g.estado === 'activa')
+
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">
       <div>
@@ -58,11 +65,20 @@ export default function DashboardClientPage({
         ahorroMes={ahorroMes}
       />
 
+      <SobranteMesCard
+        ingresosMes={ingresosMes}
+        gastosMes={gastosMes}
+        ahorroMes={ahorroMes}
+        sobranteMes={sobranteMes}
+        ultimoIngresoId={ultimoIngresoId}
+        hayMetas={hayMetas}
+      />
+
       {quincenaData ? (
         <QuincenaCard {...quincenaData} />
       ) : (
         <div className="rounded-xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
-          Registra tu primer ingreso para ver el resumen de tu quincena
+          Registra tu primer ingreso para ver el resumen de tu último período
         </div>
       )}
 

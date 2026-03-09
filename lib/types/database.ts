@@ -1,4 +1,4 @@
-export type Frecuencia = 'diario' | 'quincenal' | 'mensual'
+export type Frecuencia = 'diario' | 'semanal' | 'quincenal' | 'mensual'
 export type AhorroTipo = 'porcentaje' | 'fijo' | 'ninguno'
 export type EstadoMeta = 'activa' | 'completada' | 'pausada'
 export type TipoCategoria = 'gasto' | 'ingreso'
@@ -92,6 +92,7 @@ export interface ScheduledSaving {
   nombre: string
   tipo: 'porcentaje' | 'fijo'
   valor: number
+  frecuencia: Frecuencia
   activo: boolean
   created_at: string
 }

@@ -9,10 +9,12 @@ import { createClient } from '@/lib/supabase/client'
 import { todayISO } from '@/lib/utils/dates'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 
 const schema = z.object({
   monto: z.string().min(1, 'Requerido').refine(v => parseFloat(v) > 0, 'Debe ser mayor a 0'),
   fuente: z.string().min(1, 'Requerido'),
+  frecuencia: z.enum(['diario', 'semanal', 'quincenal', 'mensual']),
   fecha: z.string().min(1, 'Requerido'),
   notas: z.string().optional(),
 })
@@ -32,6 +34,7 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
     defaultValues: {
       fecha: todayISO(),
       fuente: 'Quincena',
+      frecuencia: 'quincenal',
     },
   })
 
@@ -45,7 +48,7 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
       user_id: user.id,
       monto: parseFloat(data.monto),
       fuente: data.fuente,
-      frecuencia: 'quincenal',
+      frecuencia: data.frecuencia,
       fecha: data.fecha,
       ahorro_tipo: 'ninguno',
       ahorro_valor: 0,
@@ -75,12 +78,24 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
         {...register('monto')}
       />
 
-      <Input
-        label="Fuente"
-        placeholder="Ej: Quincena, Salario..."
-        error={errors.fuente?.message}
-        {...register('fuente')}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Fuente"
+          placeholder="Ej: Salario, Jornal..."
+          error={errors.fuente?.message}
+          {...register('fuente')}
+        />
+        <Select
+          label="Frecuencia"
+          options={[
+            { value: 'diario', label: 'Diario' },
+            { value: 'semanal', label: 'Semanal' },
+            { value: 'quincenal', label: 'Quincenal' },
+            { value: 'mensual', label: 'Mensual' },
+          ]}
+          {...register('frecuencia')}
+        />
+      </div>
 
       <Input
         label="Fecha de recepción"
@@ -96,7 +111,7 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
       />
 
       <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
-        El sobrante de cada quincena se podrá enviar a tus metas de ahorro desde el panel principal.
+        El sobrante del mes se puede enviar a tus metas de ahorro desde el panel principal cuando quieras.
       </p>
 
       <div className="flex gap-3 pt-2">

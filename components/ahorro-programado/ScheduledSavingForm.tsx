@@ -14,6 +14,7 @@ const schema = z.object({
   nombre: z.string().min(1, 'Requerido'),
   tipo: z.enum(['porcentaje', 'fijo']),
   valor: z.string().min(1, 'Requerido').refine(v => parseFloat(v) > 0, 'Debe ser mayor a 0'),
+  frecuencia: z.enum(['diario', 'semanal', 'quincenal', 'mensual']),
 })
 
 type FormData = z.infer<typeof schema>
@@ -28,7 +29,7 @@ export function ScheduledSavingForm({ onSuccess, onCancel }: ScheduledSavingForm
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { tipo: 'porcentaje', valor: '10' },
+    defaultValues: { tipo: 'porcentaje', valor: '10', frecuencia: 'quincenal' },
   })
 
   const tipo = watch('tipo')
@@ -44,6 +45,7 @@ export function ScheduledSavingForm({ onSuccess, onCancel }: ScheduledSavingForm
       nombre: data.nombre,
       tipo: data.tipo,
       valor: parseFloat(data.valor),
+      frecuencia: data.frecuencia,
     })
 
     if (error) {
@@ -59,9 +61,20 @@ export function ScheduledSavingForm({ onSuccess, onCancel }: ScheduledSavingForm
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <Input
         label="Nombre"
-        placeholder="Ej: Ahorro mensual, Fondo de emergencia..."
+        placeholder="Ej: Ahorro quincenal, Fondo de emergencia..."
         error={errors.nombre?.message}
         {...register('nombre')}
+      />
+
+      <Select
+        label="Frecuencia"
+        options={[
+          { value: 'diario', label: 'Diario' },
+          { value: 'semanal', label: 'Semanal' },
+          { value: 'quincenal', label: 'Quincenal' },
+          { value: 'mensual', label: 'Mensual' },
+        ]}
+        {...register('frecuencia')}
       />
 
       <div className="grid grid-cols-2 gap-4">
@@ -86,7 +99,7 @@ export function ScheduledSavingForm({ onSuccess, onCancel }: ScheduledSavingForm
       </div>
 
       <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
-        Este monto se distribuirá entre tus metas de ahorro activas según su prioridad.
+        Este monto se distribuirá entre tus metas de ahorro activas según su prioridad cuando apliques el ahorro programado.
       </p>
 
       <div className="flex gap-3 pt-2">
