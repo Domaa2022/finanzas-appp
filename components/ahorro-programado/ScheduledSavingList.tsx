@@ -3,13 +3,27 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Trash2, ToggleLeft, ToggleRight, Pencil, Check, X } from 'lucide-react'
-import { ScheduledSaving } from '@/lib/types/database'
+import { ScheduledSaving, Frecuencia } from '@/lib/types/database'
 import { formatHNL } from '@/lib/utils/currency'
 import { createClient } from '@/lib/supabase/client'
 
+const FRECUENCIA_LABEL: Record<Frecuencia, string> = {
+  diario: 'por día',
+  semanal: 'por semana',
+  quincenal: 'por quincena',
+  mensual: 'por mes',
+}
+
+const FRECUENCIA_BADGE: Record<Frecuencia, string> = {
+  diario: 'Diario',
+  semanal: 'Semanal',
+  quincenal: 'Quincenal',
+  mensual: 'Mensual',
+}
+
 interface ScheduledSavingListProps {
   items: ScheduledSaving[]
-  ingresoReferencia?: number   // Para preview del monto calculado
+  ingresoReferencia?: number
   onChanged: () => void
 }
 
@@ -56,7 +70,7 @@ export function ScheduledSavingList({ items, ingresoReferencia, onChanged }: Sch
     return (
       <div className="text-center py-10 text-gray-400">
         <p className="text-base">No tienes ahorros programados</p>
-        <p className="text-sm mt-1">Agrega un ahorro que se aplique cada quincena automáticamente</p>
+        <p className="text-sm mt-1">Agrega un ahorro que se aplique automáticamente</p>
       </div>
     )
   }
@@ -65,6 +79,8 @@ export function ScheduledSavingList({ items, ingresoReferencia, onChanged }: Sch
     <div className="flex flex-col divide-y divide-gray-50">
       {items.map(item => {
         const montoCalculado = calcularMonto(item)
+        const frecLabel = FRECUENCIA_LABEL[item.frecuencia] ?? 'por quincena'
+        const frecBadge = FRECUENCIA_BADGE[item.frecuencia] ?? 'Quincenal'
         return (
           <div key={item.id} className={`flex items-center gap-3 py-3 ${!item.activo ? 'opacity-50' : ''}`}>
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50">
@@ -74,12 +90,17 @@ export function ScheduledSavingList({ items, ingresoReferencia, onChanged }: Sch
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className={`font-medium text-gray-900 truncate ${!item.activo ? 'line-through' : ''}`}>
-                {item.nombre}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className={`font-medium text-gray-900 truncate ${!item.activo ? 'line-through' : ''}`}>
+                  {item.nombre}
+                </p>
+                <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">
+                  {frecBadge}
+                </span>
+              </div>
               {montoCalculado !== null && item.activo && (
                 <p className="text-xs text-blue-600">
-                  ≈ {formatHNL(montoCalculado)} por quincena
+                  ≈ {formatHNL(montoCalculado)} {frecLabel}
                 </p>
               )}
             </div>

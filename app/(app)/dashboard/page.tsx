@@ -125,6 +125,7 @@ export default async function DashboardPage() {
   const ingresosMes = incomes.filter(i => i.fecha >= start && i.fecha <= end).reduce((s, i) => s + i.monto, 0)
   const gastosMes = expenses.filter(e => e.fecha >= start && e.fecha <= end).reduce((s, e) => s + e.monto, 0)
   const ahorroMes = allocations.filter(a => a.fecha >= start && a.fecha <= end).reduce((s, a) => s + a.monto, 0)
+  const sobranteMes = ingresosMes - gastosMes - ahorroMes
 
   // --- Transacciones recientes ---
   const allTx: RecentTransaction[] = [
@@ -169,6 +170,8 @@ export default async function DashboardPage() {
       ingresosMes={ingresosMes}
       gastosMes={gastosMes}
       ahorroMes={ahorroMes}
+      sobranteMes={sobranteMes}
+      ultimoIngresoId={ultimoIngreso?.id ?? null}
       recentTransactions={allTx}
       goals={goals}
       chartData={chartData}
