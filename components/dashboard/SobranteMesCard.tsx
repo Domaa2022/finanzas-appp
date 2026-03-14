@@ -127,11 +127,6 @@ export function SobranteMesCard({
             ? `Has ahorrado ${formatHNL(ahorroMes)} este mes`
             : 'Sin sobrante disponible este mes'}
         </div>
-      ) : !hayMetas ? (
-        <Link href="/ahorros" className="flex items-center gap-2 rounded-lg bg-yellow-50 px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-100 transition-colors">
-          <PiggyBank className="h-4 w-4" />
-          Crea una meta de ahorro para guardar el sobrante
-        </Link>
       ) : !ultimoIngresoId ? (
         <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-500">
           <PiggyBank className="h-4 w-4" />

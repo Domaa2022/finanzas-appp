@@ -59,6 +59,7 @@ export interface SavingsGoal {
   fecha_limite: string | null
   prioridad: number
   estado: EstadoMeta
+  es_general: boolean
   created_at: string
   updated_at: string
 }
@@ -66,10 +67,11 @@ export interface SavingsGoal {
 export interface SavingsAllocation {
   id: string
   user_id: string
-  income_entry_id: string
+  income_entry_id: string | null
   savings_goal_id: string
   monto: number
   fecha: string
+  notas: string | null
   created_at: string
   savings_goals?: SavingsGoal
   income_entries?: IncomeEntry

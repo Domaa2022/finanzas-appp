@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, PiggyBank, ReceiptText, Sparkles, BarChart3, FileText } from 'lucide-react'
+import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, PiggyBank, ReceiptText, Sparkles, BarChart3, FileText, Tags } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/ahorro-programado', label: 'Prog.', icon: Sparkles },
   { href: '/presupuestos', label: 'Presup.', icon: BarChart3 },
   { href: '/reportes', label: 'Reportes', icon: FileText },
+  { href: '/categorias', label: 'Categ.', icon: Tags },
 ]
 
 export function MobileNav() {

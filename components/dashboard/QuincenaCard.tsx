@@ -9,7 +9,8 @@ import { formatHNL } from '@/lib/utils/currency'
 import { formatDate, todayISO } from '@/lib/utils/dates'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
-import { FixedExpense, ScheduledSaving } from '@/lib/types/database'
+import { FixedExpense, ScheduledSaving, SavingsGoal } from '@/lib/types/database'
+import { DistribuirAhorroModal } from '@/components/ahorros/DistribuirAhorroModal'
 
 interface QuincenaCardProps {
   ultimoIngresoId: string
@@ -17,13 +18,14 @@ interface QuincenaCardProps {
   ultimoIngresoFecha: string
   ultimoIngresoFuente: string
   gastosDesdeIngreso: number
-  ahorrosYaAplicados: number         // Suma de savings_allocations ya hechas para este ingreso
-  yaAhorroSobrante: boolean          // Si el sobrante final ya fue guardado
+  ahorrosYaAplicados: number
+  yaAhorroSobrante: boolean
   hayMetas: boolean
   gastosFijos: FixedExpense[]
   gastosFijosAplicados: boolean
   ahorrosProgramados: ScheduledSaving[]
   ahorrosProgramadosAplicados: boolean
+  metasActivas: SavingsGoal[]
 }
 
 export function QuincenaCard({
@@ -34,20 +36,19 @@ export function QuincenaCard({
   gastosDesdeIngreso,
   ahorrosYaAplicados,
   yaAhorroSobrante,
-  hayMetas,
   gastosFijos,
   gastosFijosAplicados,
   ahorrosProgramados,
   ahorrosProgramadosAplicados,
+  metasActivas,
 }: QuincenaCardProps) {
   const router = useRouter()
   const [loadingAhorro, setLoadingAhorro] = useState(false)
   const [loadingFijos, setLoadingFijos] = useState(false)
-  const [loadingProgramado, setLoadingProgramado] = useState(false)
+  const [modalDistribuirOpen, setModalDistribuirOpen] = useState(false)
 
   const totalFijos = gastosFijos.filter(f => f.activo).reduce((s, f) => s + f.monto, 0)
 
-  // Total de ahorros programados calculado sobre el ingreso
   const totalProgramado = ahorrosProgramados
     .filter(s => s.activo)
     .reduce((sum, s) => {
@@ -57,7 +58,6 @@ export function QuincenaCard({
       return sum + monto
     }, 0)
 
-  // Sobrante real = ingreso - gastos - ahorros ya distribuidos
   const sobrante = ultimoIngresoMonto - gastosDesdeIngreso - ahorrosYaAplicados
 
   async function handleAplicarFijos() {
@@ -88,28 +88,6 @@ export function QuincenaCard({
     setLoadingFijos(false)
   }
 
-  async function handleAplicarProgramado() {
-    if (totalProgramado <= 0) return
-    setLoadingProgramado(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { error } = await supabase.rpc('distribute_savings', {
-      p_income_id: ultimoIngresoId,
-      p_user_id: user.id,
-      p_total_savings: totalProgramado,
-    })
-
-    if (error) {
-      toast.error('Error al aplicar ahorros programados')
-    } else {
-      toast.success(`${formatHNL(totalProgramado)} distribuidos a tus metas`)
-      router.refresh()
-    }
-    setLoadingProgramado(false)
-  }
-
   async function handleAhorrarSobrante() {
     if (sobrante <= 0) {
       toast.error('No hay sobrante para ahorrar')
@@ -129,7 +107,7 @@ export function QuincenaCard({
     if (error) {
       toast.error('Error al guardar sobrante')
     } else {
-      toast.success(`${formatHNL(sobrante)} enviados a tus metas`)
+      toast.success(`${formatHNL(sobrante)} guardados`)
       router.refresh()
     }
     setLoadingAhorro(false)
@@ -228,15 +206,14 @@ export function QuincenaCard({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {!ahorrosProgramadosAplicados && hayMetas && (
+            {!ahorrosProgramadosAplicados && (
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={handleAplicarProgramado}
-                loading={loadingProgramado}
+                onClick={() => setModalDistribuirOpen(true)}
                 className="border-blue-200 text-blue-700 hover:bg-blue-100 text-xs"
               >
-                Aplicar
+                Distribuir
               </Button>
             )}
             <Link href="/ahorro-programado" className="p-1 text-blue-400 hover:text-blue-600 transition-colors" title="Gestionar ahorros programados">
@@ -301,11 +278,6 @@ export function QuincenaCard({
             ? `Has ahorrado ${formatHNL(ahorrosYaAplicados)} esta quincena`
             : 'Sin sobrante disponible esta quincena'}
         </div>
-      ) : !hayMetas ? (
-        <Link href="/ahorros" className="flex items-center gap-2 rounded-lg bg-yellow-50 px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-100 transition-colors">
-          <PiggyBank className="h-4 w-4" />
-          Crea una meta de ahorro para guardar el sobrante
-        </Link>
       ) : yaAhorroSobrante ? (
         <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           <PiggyBank className="h-4 w-4" />
@@ -318,6 +290,16 @@ export function QuincenaCard({
           <ArrowRight className="h-4 w-4 ml-auto" />
         </Button>
       )}
+
+      {/* Modal de distribución manual */}
+      <DistribuirAhorroModal
+        open={modalDistribuirOpen}
+        onClose={() => setModalDistribuirOpen(false)}
+        totalAmount={totalProgramado}
+        metasActivas={metasActivas}
+        incomeId={ultimoIngresoId}
+        onSuccess={() => router.refresh()}
+      />
     </div>
   )
 }
