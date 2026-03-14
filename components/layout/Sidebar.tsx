@@ -11,6 +11,7 @@ import {
   FileText,
   ReceiptText,
   Sparkles,
+  Tags,
 } from 'lucide-react'
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
   { href: '/ahorro-programado', label: 'Ahorro Prog.', icon: Sparkles },
   { href: '/presupuestos', label: 'Presupuestos', icon: BarChart3 },
   { href: '/reportes', label: 'Reportes', icon: FileText },
+  { href: '/categorias', label: 'Categorías', icon: Tags },
 ]
 
 export function Sidebar() {

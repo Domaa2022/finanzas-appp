@@ -22,6 +22,7 @@ interface QuincenaData {
   gastosFijosAplicados: boolean
   ahorrosProgramados: ScheduledSaving[]
   ahorrosProgramadosAplicados: boolean
+  metasActivas: SavingsGoal[]
 }
 
 interface Props {
@@ -49,7 +50,7 @@ export default function DashboardClientPage({
   chartData,
   quincenaData,
 }: Props) {
-  const hayMetas = goals.some((g: any) => g.estado === 'activa')
+  const hayMetas = goals.some((g: any) => g.estado === 'activa' && !g.es_general)
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">

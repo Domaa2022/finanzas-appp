@@ -107,11 +107,12 @@ export default async function DashboardPage() {
       gastosDesdeIngreso: gastosQuincena,
       ahorrosYaAplicados,
       yaAhorroSobrante,
-      hayMetas: goals.some((g: any) => g.estado === 'activa'),
+      hayMetas: goals.some((g: any) => g.estado === 'activa' && !g.es_general),
       gastosFijos,
       gastosFijosAplicados,
       ahorrosProgramados,
       ahorrosProgramadosAplicados,
+      metasActivas: goals.filter((g: any) => g.estado === 'activa' && !g.es_general),
     }
   }
 
