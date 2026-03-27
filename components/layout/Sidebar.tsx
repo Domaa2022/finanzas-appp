@@ -12,6 +12,7 @@ import {
   ReceiptText,
   Sparkles,
   Tags,
+  CreditCard,
 } from 'lucide-react'
 
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
   { href: '/gastos', label: 'Gastos', icon: ArrowDownCircle },
   { href: '/gastos-fijos', label: 'Gastos Fijos', icon: ReceiptText },
+  { href: '/suscripciones', label: 'Suscripciones', icon: CreditCard },
   { href: '/ahorros', label: 'Ahorros', icon: PiggyBank },
   { href: '/ahorro-programado', label: 'Ahorro Prog.', icon: Sparkles },
   { href: '/presupuestos', label: 'Presupuestos', icon: BarChart3 },
