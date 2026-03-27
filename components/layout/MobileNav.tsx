@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, PiggyBank, ReceiptText, Sparkles, BarChart3, FileText, Tags } from 'lucide-react'
+import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, PiggyBank, ReceiptText, Sparkles, BarChart3, FileText, Tags, CreditCard } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
   { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
   { href: '/gastos', label: 'Gastos', icon: ArrowDownCircle },
   { href: '/gastos-fijos', label: 'Fijos', icon: ReceiptText },
+  { href: '/suscripciones', label: 'Suscripc.', icon: CreditCard },
   { href: '/ahorros', label: 'Ahorros', icon: PiggyBank },
   { href: '/ahorro-programado', label: 'Prog.', icon: Sparkles },
   { href: '/presupuestos', label: 'Presup.', icon: BarChart3 },

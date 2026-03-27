@@ -110,6 +110,24 @@ export interface FixedExpense {
   categories?: Category
 }
 
+export type FrecuenciaSuscripcion = 'semanal' | 'mensual' | 'trimestral' | 'anual'
+export type CategoriaSuscripcion = 'entretenimiento' | 'software' | 'educacion' | 'productividad' | 'gaming' | 'otro'
+export type EstadoSuscripcion = 'activa' | 'pausada' | 'cancelada'
+
+export interface Subscription {
+  id: string
+  user_id: string
+  nombre: string
+  monto: number
+  frecuencia: FrecuenciaSuscripcion
+  fecha_renovacion: string | null
+  categoria: CategoriaSuscripcion
+  estado: EstadoSuscripcion
+  notas: string | null
+  color: string | null
+  created_at: string
+}
+
 export interface BudgetWithSpent extends Budget {
   gastado: number
   restante: number
