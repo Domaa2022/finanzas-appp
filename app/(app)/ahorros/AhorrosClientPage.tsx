@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Plus, PiggyBank } from 'lucide-react'
+import { Plus, PiggyBank, ChevronDown, ChevronUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { SavingsGoal, SavingsAllocation } from '@/lib/types/database'
 import { GoalCard } from '@/components/ahorros/GoalCard'
@@ -20,6 +20,7 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
   const router = useRouter()
   const [modalMetaOpen, setModalMetaOpen] = useState(false)
   const [modalAhorroOpen, setModalAhorroOpen] = useState(false)
+  const [archivosVisible, setArchivosVisible] = useState(false)
 
   const handleSuccess = useCallback(() => {
     setModalMetaOpen(false)
@@ -30,8 +31,9 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
   const generalGoal = initialGoals.find(g => g.es_general)
   const regularGoals = initialGoals.filter(g => !g.es_general)
 
-  const totalAhorrado = initialGoals.reduce((sum, g) => sum + g.monto_actual, 0)
-  const totalObjetivo = regularGoals.reduce((sum, g) => sum + g.monto_objetivo, 0)
+  const metasEnCurso = regularGoals.filter(g => g.estado !== 'completada')
+  const totalAhorrado = metasEnCurso.reduce((sum, g) => sum + g.monto_actual, 0)
+  const totalObjetivo = metasEnCurso.reduce((sum, g) => sum + g.monto_objetivo, 0)
 
   const goalsByStatus = {
     activa: regularGoals.filter(g => g.estado === 'activa'),
@@ -43,9 +45,9 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ahorros</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {formatHNL(totalAhorrado)} <span className="text-gray-400">de {formatHNL(totalObjetivo)} en metas</span>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Ahorros</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+            {formatHNL(totalAhorrado)} <span className="text-gray-400 dark:text-slate-500">de {formatHNL(totalObjetivo)} en metas</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -63,7 +65,7 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
       {/* Fondo General */}
       {generalGoal && (
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Fondo General</h2>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-3">Fondo General</h2>
           <GoalCard
             goal={generalGoal}
             allocations={allocations.filter(a => a.savings_goal_id === generalGoal.id)}
@@ -74,7 +76,7 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
       )}
 
       {regularGoals.length === 0 && !generalGoal && (
-        <div className="text-center py-16 text-gray-400 bg-white rounded-xl border border-gray-100">
+        <div className="text-center py-16 text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700">
           <p className="text-base">No tienes metas de ahorro</p>
           <p className="text-sm mt-1">Crea tu primera meta o registra un ahorro</p>
         </div>
@@ -82,7 +84,7 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
 
       {goalsByStatus.activa.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Metas activas</h2>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-3">Metas activas</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {goalsByStatus.activa.map(goal => (
               <GoalCard
@@ -98,7 +100,7 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
 
       {goalsByStatus.pausada.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Pausadas</h2>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-3">Pausadas</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {goalsByStatus.pausada.map(goal => (
               <GoalCard
@@ -114,17 +116,25 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
 
       {goalsByStatus.completada.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Completadas</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {goalsByStatus.completada.map(goal => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                allocations={allocations.filter(a => a.savings_goal_id === goal.id)}
-                onChanged={() => router.refresh()}
-              />
-            ))}
-          </div>
+          <button
+            onClick={() => setArchivosVisible(v => !v)}
+            className="flex items-center gap-2 text-sm font-semibold text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 uppercase tracking-wide mb-3 transition-colors"
+          >
+            {archivosVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            Archivadas ({goalsByStatus.completada.length})
+          </button>
+          {archivosVisible && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {goalsByStatus.completada.map(goal => (
+                <GoalCard
+                  key={goal.id}
+                  goal={goal}
+                  allocations={allocations.filter(a => a.savings_goal_id === goal.id)}
+                  onChanged={() => router.refresh()}
+                />
+              ))}
+            </div>
+          )}
         </section>
       )}
 

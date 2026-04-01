@@ -72,13 +72,13 @@ export function TransferirDesdeGeneralModal({ open, onClose, fondoGeneral, metas
   return (
     <Modal open={open} onClose={onClose} title="Trasladar al Fondo General" size="sm">
       <div className="flex flex-col gap-4">
-        <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-4 py-3 flex items-center justify-between">
-          <span className="text-sm text-emerald-700 font-medium">Saldo disponible</span>
-          <span className="text-lg font-bold text-emerald-800">{formatHNL(fondoGeneral.monto_actual)}</span>
+        <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Saldo disponible</span>
+          <span className="text-lg font-bold text-emerald-800 dark:text-emerald-300">{formatHNL(fondoGeneral.monto_actual)}</span>
         </div>
 
         {metasConEspacio.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-2">
+          <p className="text-sm text-gray-500 dark:text-slate-400 text-center py-2">
             No tienes metas activas con espacio disponible.
           </p>
         ) : (

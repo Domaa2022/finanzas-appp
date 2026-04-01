@@ -8,6 +8,7 @@ export interface Profile {
   nombre: string
   email: string
   default_savings_pct: number
+  avatar_url: string | null
   created_at: string
   updated_at: string
 }
@@ -108,6 +109,17 @@ export interface FixedExpense {
   activo: boolean
   created_at: string
   categories?: Category
+}
+
+export interface CashEntry {
+  id: string
+  user_id: string
+  tipo: 'entrada' | 'salida'
+  monto: number
+  descripcion: string
+  fecha: string
+  notas: string | null
+  created_at: string
 }
 
 export type FrecuenciaSuscripcion = 'semanal' | 'mensual' | 'trimestral' | 'anual'

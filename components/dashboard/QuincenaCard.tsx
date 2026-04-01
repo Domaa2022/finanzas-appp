@@ -66,10 +66,27 @@ export function QuincenaCard({
     setLoadingFijos(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) { setLoadingFijos(false); return }
+
+    // Gastos fijos ya registrados desde el último ingreso
+    const { data: gastosExistentes } = await supabase
+      .from('expenses')
+      .select('descripcion')
+      .eq('user_id', user.id)
+      .eq('notas', 'Gasto fijo quincenal')
+      .gte('fecha', ultimoIngresoFecha)
+
+    const yaAplicados = new Set((gastosExistentes || []).map(e => e.descripcion))
+    const pendientes = activos.filter(f => !yaAplicados.has(f.nombre))
+
+    if (pendientes.length === 0) {
+      toast.info('Todos los gastos fijos ya están registrados esta quincena')
+      setLoadingFijos(false)
+      return
+    }
 
     const today = todayISO()
-    const rows = activos.map(f => ({
+    const rows = pendientes.map(f => ({
       user_id: user.id,
       monto: f.monto,
       category_id: f.category_id,
@@ -82,7 +99,8 @@ export function QuincenaCard({
     if (error) {
       toast.error('Error al registrar gastos fijos')
     } else {
-      toast.success(`${activos.length} gastos fijos registrados (${formatHNL(totalFijos)})`)
+      const total = pendientes.reduce((s, f) => s + f.monto, 0)
+      toast.success(`${pendientes.length} gastos fijos registrados (${formatHNL(total)})`)
       router.refresh()
     }
     setLoadingFijos(false)
@@ -114,11 +132,11 @@ export function QuincenaCard({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5 flex flex-col gap-4">
       {/* Encabezado */}
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900">Quincena actual</h2>
-        <span className="text-xs text-gray-400">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Quincena actual</h2>
+        <span className="text-xs text-gray-400 dark:text-slate-500">
           {ultimoIngresoFuente} · {formatDate(ultimoIngresoFecha)}
         </span>
       </div>
@@ -126,7 +144,7 @@ export function QuincenaCard({
       {/* Números */}
       <div className="grid grid-cols-4 gap-2 sm:gap-3">
         <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
             <TrendingUp className="h-3 w-3 text-emerald-500" />
             Recibido
           </div>
@@ -134,7 +152,7 @@ export function QuincenaCard({
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
             <TrendingDown className="h-3 w-3 text-red-500" />
             Gastado
           </div>
@@ -142,7 +160,7 @@ export function QuincenaCard({
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
             <PiggyBank className="h-3 w-3 text-blue-500" />
             Ahorrado
           </div>
@@ -150,11 +168,11 @@ export function QuincenaCard({
         </div>
 
         <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
             <Sparkles className="h-3 w-3 text-violet-500" />
             Sobrante
           </div>
-          <p className={`font-bold text-sm sm:text-base ${sobrante > 0 ? 'text-violet-600' : 'text-gray-400'}`}>
+          <p className={`font-bold text-sm sm:text-base ${sobrante > 0 ? 'text-violet-600' : 'text-gray-400 dark:text-slate-500'}`}>
             {formatHNL(Math.max(sobrante, 0))}
           </p>
         </div>
@@ -163,7 +181,7 @@ export function QuincenaCard({
       {/* Barra visual */}
       {ultimoIngresoMonto > 0 && (
         <div>
-          <div className="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden flex">
+          <div className="h-2.5 w-full rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden flex">
             <div
               className="h-full bg-red-400 transition-all"
               style={{ width: `${Math.min((gastosDesdeIngreso / ultimoIngresoMonto) * 100, 100)}%` }}
@@ -179,7 +197,7 @@ export function QuincenaCard({
               />
             )}
           </div>
-          <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-gray-400">
+          <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-gray-400 dark:text-slate-500">
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-400 inline-block" /> Gastos</span>
             {ahorrosYaAplicados > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-400 inline-block" /> Ahorrado</span>}
             {sobrante > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-300 inline-block" /> Sobrante</span>}
@@ -226,7 +244,7 @@ export function QuincenaCard({
       {ahorrosProgramados.length === 0 && (
         <Link
           href="/ahorro-programado"
-          className="flex items-center gap-2 rounded-xl border border-dashed border-gray-200 px-3 py-2 text-xs text-gray-400 hover:border-blue-200 hover:text-blue-600 transition-colors"
+          className="flex items-center gap-2 rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-3 py-2 text-xs text-gray-400 dark:text-slate-500 hover:border-blue-200 hover:text-blue-600 transition-colors"
         >
           <Sparkles className="h-4 w-4" />
           Configura un ahorro programado quincenal
@@ -272,14 +290,14 @@ export function QuincenaCard({
 
       {/* Botón ahorrar sobrante */}
       {sobrante <= 0 ? (
-        <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-500">
+        <div className="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-slate-700/50 px-3 py-2 text-sm text-gray-500 dark:text-slate-400">
           <PiggyBank className="h-4 w-4" />
           {ahorrosYaAplicados > 0
             ? `Has ahorrado ${formatHNL(ahorrosYaAplicados)} esta quincena`
             : 'Sin sobrante disponible esta quincena'}
         </div>
       ) : yaAhorroSobrante ? (
-        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
           <PiggyBank className="h-4 w-4" />
           Todo el sobrante fue enviado a tus metas
         </div>

@@ -77,13 +77,13 @@ export function DistribuirAhorroModal({ open, onClose, totalAmount, metasActivas
   return (
     <Modal open={open} onClose={onClose} title="Distribuir ahorro programado" size="md">
       <div className="flex flex-col gap-4">
-        <div className="rounded-lg bg-blue-50 border border-blue-100 px-4 py-3 flex items-center justify-between">
-          <span className="text-sm text-blue-700 font-medium">Total a distribuir</span>
-          <span className="text-lg font-bold text-blue-800">{formatHNL(totalAmount)}</span>
+        <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-blue-700 dark:text-blue-400 font-medium">Total a distribuir</span>
+          <span className="text-lg font-bold text-blue-800 dark:text-blue-300">{formatHNL(totalAmount)}</span>
         </div>
 
         {metas.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-2">
+          <p className="text-sm text-gray-500 dark:text-slate-400 text-center py-2">
             No tienes metas activas con espacio disponible. El total irá al Fondo General.
           </p>
         ) : (
@@ -92,8 +92,8 @@ export function DistribuirAhorroModal({ open, onClose, totalAmount, metasActivas
               const espacio = Math.round((goal.monto_objetivo - goal.monto_actual) * 100) / 100
               return (
                 <div key={goal.id} className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="font-medium text-gray-700">{goal.nombre}</span>
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400">
+                    <span className="font-medium text-gray-700 dark:text-slate-300">{goal.nombre}</span>
                     <span>Disponible: {formatHNL(espacio)}</span>
                   </div>
                   <Input
@@ -112,15 +112,15 @@ export function DistribuirAhorroModal({ open, onClose, totalAmount, metasActivas
         )}
 
         {/* Fondo General */}
-        <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-lg border border-emerald-100 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-emerald-600" />
+            <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <div>
-              <p className="text-sm font-medium text-emerald-800">Fondo General</p>
-              <p className="text-xs text-emerald-600">Sobrante sin asignar</p>
+              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Fondo General</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-500">Sobrante sin asignar</p>
             </div>
           </div>
-          <span className="text-base font-bold text-emerald-700">{formatHNL(alFondoGeneral)}</span>
+          <span className="text-base font-bold text-emerald-700 dark:text-emerald-300">{formatHNL(alFondoGeneral)}</span>
         </div>
 
         {totalAsignado > totalAmount + 0.01 && (

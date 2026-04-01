@@ -44,8 +44,8 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gastos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Este mes: <span className="font-medium text-red-500">{formatHNL(totalMes)}</span></p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Gastos</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Este mes: <span className="font-medium text-red-500">{formatHNL(totalMes)}</span></p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -60,7 +60,7 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
           className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
             filtroCategoria === ''
               ? 'bg-emerald-600 text-white'
-              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700'
           }`}
         >
           Todos
@@ -72,7 +72,7 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               filtroCategoria === cat.id
                 ? 'text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700'
             }`}
             style={filtroCategoria === cat.id ? { backgroundColor: cat.color || '#10B981' } : {}}
           >

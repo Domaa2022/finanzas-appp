@@ -52,7 +52,7 @@ export function IncomeList({ items, onDeleted }: IncomeListProps) {
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-gray-400 dark:text-slate-500">
         <p className="text-base">No hay ingresos registrados</p>
         <p className="text-sm mt-1">Agrega tu primer ingreso con el botón de arriba</p>
       </div>
@@ -60,36 +60,36 @@ export function IncomeList({ items, onDeleted }: IncomeListProps) {
   }
 
   return (
-    <div className="flex flex-col divide-y divide-gray-50">
+    <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700">
       {items.map(item => (
         <div key={item.id} className="py-3">
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-gray-900 truncate">{item.fuente}</span>
+                <span className="font-medium text-gray-900 dark:text-slate-100 truncate">{item.fuente}</span>
                 <Badge variant={frecuenciaBadge[item.frecuencia]}>
                   {frecuenciaLabel[item.frecuencia]}
                 </Badge>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">{formatDate(item.fecha)}</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{formatDate(item.fecha)}</p>
             </div>
             <div className="text-right flex items-center gap-2">
               <div>
                 <p className="font-semibold text-emerald-600">{formatHNL(item.monto)}</p>
                 {item.ahorro_tipo !== 'ninguno' && (
-                  <p className="text-xs text-gray-400">Ahorro: {ahorroLabel(item.ahorro_tipo, item.ahorro_valor)}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">Ahorro: {ahorroLabel(item.ahorro_tipo, item.ahorro_valor)}</p>
                 )}
               </div>
               <button
                 onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                className="p-1 text-gray-400 hover:text-gray-600"
+                className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
               >
                 {expandedId === item.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
               <button
                 onClick={() => handleDelete(item.id)}
                 disabled={deletingId === item.id}
-                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -97,8 +97,8 @@ export function IncomeList({ items, onDeleted }: IncomeListProps) {
           </div>
 
           {expandedId === item.id && item.notas && (
-            <div className="mt-2 ml-0 bg-gray-50 rounded-lg px-3 py-2">
-              <p className="text-xs text-gray-500">{item.notas}</p>
+            <div className="mt-2 ml-0 bg-gray-50 dark:bg-slate-700 rounded-lg px-3 py-2">
+              <p className="text-xs text-gray-500 dark:text-slate-400">{item.notas}</p>
             </div>
           )}
         </div>

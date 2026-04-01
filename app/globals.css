@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
+/* Class-based dark mode using data attribute — completely independent from OS preference */
+@variant dark ([data-theme="dark"] &);
+
 body {
   background-color: #F9FAFB;
   color: #111827;
+}
+
+[data-theme="dark"] body {
+  background-color: #0F172A;
+  color: #F1F5F9;
 }
 
 * {

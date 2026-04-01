@@ -14,7 +14,7 @@ export function Card({ children, className = '', padding = 'md', ...props }: Car
 
   return (
     <div
-      className={`bg-white rounded-xl border border-gray-100 shadow-sm ${paddingClass} ${className}`}
+      className={`bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm ${paddingClass} ${className}`}
       {...props}
     >
       {children}

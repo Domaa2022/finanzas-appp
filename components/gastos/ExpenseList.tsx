@@ -32,7 +32,7 @@ export function ExpenseList({ items, onDeleted }: ExpenseListProps) {
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-gray-400 dark:text-slate-500">
         <p className="text-base">No hay gastos registrados</p>
         <p className="text-sm mt-1">Agrega tu primer gasto con el botón de arriba</p>
       </div>
@@ -40,7 +40,7 @@ export function ExpenseList({ items, onDeleted }: ExpenseListProps) {
   }
 
   return (
-    <div className="flex flex-col divide-y divide-gray-50">
+    <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700">
       {items.map(item => (
         <div key={item.id} className="flex items-center gap-3 py-3">
           <div
@@ -52,15 +52,15 @@ export function ExpenseList({ items, onDeleted }: ExpenseListProps) {
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-gray-900 truncate">{item.descripcion}</p>
-            <p className="text-xs text-gray-400">{item.categories?.nombre} · {formatDate(item.fecha)}</p>
+            <p className="font-medium text-gray-900 dark:text-slate-100 truncate">{item.descripcion}</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500">{item.categories?.nombre} · {formatDate(item.fecha)}</p>
           </div>
           <div className="flex items-center gap-2">
             <p className="font-semibold text-red-500">{formatHNL(item.monto)}</p>
             <button
               onClick={() => handleDelete(item.id)}
               disabled={deletingId === item.id}
-              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+              className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             >
               <Trash2 className="h-4 w-4" />
             </button>

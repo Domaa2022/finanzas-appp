@@ -49,7 +49,7 @@ export function FixedExpenseList({ items, onChanged }: FixedExpenseListProps) {
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-10 text-gray-400">
+      <div className="text-center py-10 text-gray-400 dark:text-slate-500">
         <p className="text-base">No tienes gastos fijos registrados</p>
         <p className="text-sm mt-1">Agrega gastos que se repiten cada quincena</p>
       </div>
@@ -57,7 +57,7 @@ export function FixedExpenseList({ items, onChanged }: FixedExpenseListProps) {
   }
 
   return (
-    <div className="flex flex-col divide-y divide-gray-50">
+    <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700">
       {items.map(item => (
         <div key={item.id} className={`flex items-center gap-3 py-3 ${!item.activo ? 'opacity-50' : ''}`}>
           <div
@@ -71,11 +71,11 @@ export function FixedExpenseList({ items, onChanged }: FixedExpenseListProps) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className={`font-medium text-gray-900 truncate ${!item.activo ? 'line-through' : ''}`}>
+            <p className={`font-medium text-gray-900 dark:text-slate-100 truncate ${!item.activo ? 'line-through' : ''}`}>
               {item.nombre}
             </p>
             {item.categories && (
-              <p className="text-xs text-gray-400">{item.categories.nombre}</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500">{item.categories.nombre}</p>
             )}
           </div>
 
@@ -86,13 +86,13 @@ export function FixedExpenseList({ items, onChanged }: FixedExpenseListProps) {
                   type="number"
                   value={editMonto}
                   onChange={e => setEditMonto(e.target.value)}
-                  className="w-24 rounded-lg border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-24 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   autoFocus
                 />
                 <button onClick={() => handleEditSave(item.id)} className="p-1 text-emerald-600 hover:text-emerald-700">
                   <Check className="h-4 w-4" />
                 </button>
-                <button onClick={() => setEditingId(null)} className="p-1 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setEditingId(null)} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
                   <X className="h-4 w-4" />
                 </button>
               </>
@@ -100,10 +100,10 @@ export function FixedExpenseList({ items, onChanged }: FixedExpenseListProps) {
               <>
                 <button
                   onClick={() => { setEditingId(item.id); setEditMonto(item.monto.toString()) }}
-                  className="font-semibold text-gray-700 hover:text-emerald-600 transition-colors text-sm flex items-center gap-1"
+                  className="font-semibold text-gray-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors text-sm flex items-center gap-1"
                 >
                   {formatHNL(item.monto)}
-                  <Pencil className="h-3 w-3 text-gray-300" />
+                  <Pencil className="h-3 w-3 text-gray-300 dark:text-slate-600" />
                 </button>
 
                 <button
