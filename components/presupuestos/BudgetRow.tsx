@@ -59,7 +59,7 @@ export function BudgetRow({ budget, onChanged }: BudgetRowProps) {
             className="h-3 w-3 rounded-full shrink-0"
             style={{ backgroundColor: budget.categories?.color || '#6B7280' }}
           />
-          <span className="font-medium text-gray-900 truncate">{budget.categories?.nombre}</span>
+          <span className="font-medium text-gray-900 dark:text-slate-100 truncate">{budget.categories?.nombre}</span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -69,20 +69,20 @@ export function BudgetRow({ budget, onChanged }: BudgetRowProps) {
                 type="number"
                 value={value}
                 onChange={e => setValue(e.target.value)}
-                className="w-28 rounded-lg border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-28 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 autoFocus
               />
               <button onClick={handleSave} disabled={loading} className="p-1 text-emerald-600 hover:text-emerald-700">
                 <Check className="h-4 w-4" />
               </button>
-              <button onClick={() => setEditing(false)} className="p-1 text-gray-400 hover:text-gray-600">
+              <button onClick={() => setEditing(false)} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
                 <X className="h-4 w-4" />
               </button>
             </>
           ) : (
             <>
               <div className="text-right">
-                <button onClick={() => setEditing(true)} className="text-sm font-medium text-gray-700 hover:text-emerald-600 transition-colors">
+                <button onClick={() => setEditing(true)} className="text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
                   {formatHNL(budget.limite_mensual)}
                 </button>
                 <p className={`text-xs ${colors.text}`}>
@@ -101,7 +101,7 @@ export function BudgetRow({ budget, onChanged }: BudgetRowProps) {
         </div>
       </div>
 
-      <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+      <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{
@@ -111,7 +111,7 @@ export function BudgetRow({ budget, onChanged }: BudgetRowProps) {
         />
       </div>
 
-      <div className="flex justify-between mt-1 text-xs text-gray-400">
+      <div className="flex justify-between mt-1 text-xs text-gray-400 dark:text-slate-500">
         <span>{budget.porcentaje}% usado</span>
         <span className={budget.restante < 0 ? 'text-red-500 font-medium' : ''}>
           {budget.restante < 0 ? `Excedido ${formatHNL(Math.abs(budget.restante))}` : `${formatHNL(budget.restante)} restante`}

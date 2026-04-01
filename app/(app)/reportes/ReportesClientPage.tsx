@@ -48,7 +48,6 @@ export default function ReportesClientPage({ incomes, expenses, allocations, cur
   const totalAhorros = filteredAllocations.reduce((s, a) => s + a.monto, 0)
   const balance = totalIngresos - totalGastos - totalAhorros
 
-  // Agrupación por categoría para el donut
   const categoryData = useMemo(() => {
     const byCategory: Record<string, { nombre: string; monto: number; color: string }> = {}
     for (const exp of filteredExpenses) {
@@ -65,7 +64,6 @@ export default function ReportesClientPage({ incomes, expenses, allocations, cur
     return Object.values(byCategory).sort((a, b) => b.monto - a.monto)
   }, [filteredExpenses])
 
-  // Datos del gráfico mes a mes
   const chartData = useMemo(() => {
     return Array.from({ length: months }, (_, i) => {
       const date = subMonths(new Date(currentAnio, currentMes - 1, 1), months - 1 - i)
@@ -85,8 +83,8 @@ export default function ReportesClientPage({ incomes, expenses, allocations, cur
     <div className="flex flex-col gap-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reportes</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Análisis de tus finanzas</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Reportes</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Análisis de tus finanzas</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {periodos.map(p => (
@@ -96,7 +94,7 @@ export default function ReportesClientPage({ incomes, expenses, allocations, cur
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                 periodo === p.value
                   ? 'bg-emerald-600 text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700'
               }`}
             >
               {p.label}
@@ -108,31 +106,31 @@ export default function ReportesClientPage({ incomes, expenses, allocations, cur
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card padding="sm">
-          <p className="text-xs text-gray-500">Ingresos</p>
+          <p className="text-xs text-gray-500 dark:text-slate-400">Ingresos</p>
           <p className="font-bold text-emerald-600 mt-1">{formatHNL(totalIngresos)}</p>
         </Card>
         <Card padding="sm">
-          <p className="text-xs text-gray-500">Gastos</p>
+          <p className="text-xs text-gray-500 dark:text-slate-400">Gastos</p>
           <p className="font-bold text-red-500 mt-1">{formatHNL(totalGastos)}</p>
         </Card>
         <Card padding="sm">
-          <p className="text-xs text-gray-500">Ahorros</p>
+          <p className="text-xs text-gray-500 dark:text-slate-400">Ahorros</p>
           <p className="font-bold text-blue-600 mt-1">{formatHNL(totalAhorros)}</p>
         </Card>
         <Card padding="sm">
-          <p className="text-xs text-gray-500">Balance</p>
-          <p className={`font-bold mt-1 ${balance >= 0 ? 'text-gray-900' : 'text-red-600'}`}>{formatHNL(balance)}</p>
+          <p className="text-xs text-gray-500 dark:text-slate-400">Balance</p>
+          <p className={`font-bold mt-1 ${balance >= 0 ? 'text-gray-900 dark:text-slate-100' : 'text-red-600'}`}>{formatHNL(balance)}</p>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Ingresos vs Gastos</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">Ingresos vs Gastos</h2>
           <IncomeExpenseChart data={chartData} />
         </Card>
 
         <Card>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Gastos por categoría</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">Gastos por categoría</h2>
           <CategoryBreakdown data={categoryData} />
         </Card>
       </div>
@@ -140,16 +138,16 @@ export default function ReportesClientPage({ incomes, expenses, allocations, cur
       {/* Tabla de categorías */}
       {categoryData.length > 0 && (
         <Card>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Detalle por categoría</h2>
-          <div className="flex flex-col divide-y divide-gray-50">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">Detalle por categoría</h2>
+          <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700">
             {categoryData.map(cat => {
               const pct = totalGastos > 0 ? Math.round((cat.monto / totalGastos) * 100) : 0
               return (
                 <div key={cat.nombre} className="flex items-center gap-3 py-3">
                   <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                  <span className="flex-1 text-sm text-gray-700">{cat.nombre}</span>
-                  <span className="text-xs text-gray-400">{pct}%</span>
-                  <span className="font-medium text-sm text-gray-900">{formatHNL(cat.monto)}</span>
+                  <span className="flex-1 text-sm text-gray-700 dark:text-slate-300">{cat.nombre}</span>
+                  <span className="text-xs text-gray-400 dark:text-slate-500">{pct}%</span>
+                  <span className="font-medium text-sm text-gray-900 dark:text-slate-100">{formatHNL(cat.monto)}</span>
                 </div>
               )
             })}

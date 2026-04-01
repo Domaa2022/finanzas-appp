@@ -32,21 +32,55 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
   const activos = initialFixed.filter(f => f.activo)
   const totalFijo = activos.reduce((s, f) => s + f.monto, 0)
 
-  // Registrar todos los gastos fijos activos como gastos de hoy
+  // Registrar solo los gastos fijos activos que aún no se han aplicado esta quincena
   async function handleAplicar() {
     if (activos.length === 0) {
       toast.error('No hay gastos fijos activos')
       return
     }
-    if (!confirm(`¿Registrar ${activos.length} gastos fijos por ${formatHNL(totalFijo)} con fecha de hoy?`)) return
 
     setApplying(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) { setApplying(false); return }
+
+    // Fecha del último ingreso (inicio de la quincena actual)
+    const { data: ultimoIngreso } = await supabase
+      .from('income_entries')
+      .select('fecha')
+      .eq('user_id', user.id)
+      .order('fecha', { ascending: false })
+      .limit(1)
+      .single()
+
+    const fechaDesde = ultimoIngreso?.fecha ?? todayISO()
+
+    // Gastos fijos ya registrados desde el último ingreso
+    const { data: gastosExistentes } = await supabase
+      .from('expenses')
+      .select('descripcion')
+      .eq('user_id', user.id)
+      .eq('notas', 'Gasto fijo quincenal')
+      .gte('fecha', fechaDesde)
+
+    const yaAplicados = new Set((gastosExistentes || []).map(e => e.descripcion))
+
+    const pendientes = activos.filter(f => !yaAplicados.has(f.nombre))
+
+    if (pendientes.length === 0) {
+      toast.info('Todos los gastos fijos ya están registrados esta quincena')
+      setApplying(false)
+      return
+    }
+
+    const totalPendiente = pendientes.reduce((s, f) => s + f.monto, 0)
+    if (!confirm(`¿Registrar ${pendientes.length} gasto${pendientes.length !== 1 ? 's' : ''} fijo${pendientes.length !== 1 ? 's' : ''} por ${formatHNL(totalPendiente)} con fecha de hoy?`)) {
+      setApplying(false)
+      return
+    }
 
     const today = todayISO()
-    const rows = activos.map(f => ({
+    const rows = pendientes.map(f => ({
       user_id: user.id,
       monto: f.monto,
       category_id: f.category_id,
@@ -59,7 +93,7 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
     if (error) {
       toast.error('Error al registrar gastos fijos')
     } else {
-      toast.success(`${activos.length} gastos fijos registrados (${formatHNL(totalFijo)})`)
+      toast.success(`${pendientes.length} gasto${pendientes.length !== 1 ? 's' : ''} fijo${pendientes.length !== 1 ? 's' : ''} registrado${pendientes.length !== 1 ? 's' : ''} (${formatHNL(totalPendiente)})`)
       router.refresh()
     }
     setApplying(false)
@@ -69,8 +103,8 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gastos Fijos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Gastos Fijos</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             {activos.length} activos · Total quincenal:{' '}
             <span className="font-medium text-red-500">{formatHNL(totalFijo)}</span>
           </p>
@@ -82,8 +116,8 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
       </div>
 
       {/* Info de uso */}
-      <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800 flex items-start gap-3">
-        <ReceiptText className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
+      <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex items-start gap-3">
+        <ReceiptText className="h-5 w-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
         <p>
           Estos son tus gastos que se repiten cada quincena (renta, servicios, etc.).
           Cuando recibas tu pago, usa el botón <strong>"Registrar gastos fijos"</strong> para

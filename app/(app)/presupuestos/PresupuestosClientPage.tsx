@@ -68,8 +68,8 @@ export default function PresupuestosClientPage({ budgets, categories, mes, anio,
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Presupuestos</h1>
-          <p className="text-sm text-gray-500 mt-0.5 capitalize">{formatMonth(mes, anio)}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Presupuestos</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5 capitalize">{formatMonth(mes, anio)}</p>
         </div>
         {availableCategories.length > 0 && (
           <Button onClick={() => setModalOpen(true)}>
@@ -83,15 +83,15 @@ export default function PresupuestosClientPage({ budgets, categories, mes, anio,
       {budgets.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           <Card padding="sm">
-            <p className="text-xs text-gray-500">Total presupuesto</p>
-            <p className="font-bold text-gray-900 mt-1">L {totalPresupuesto.toLocaleString('es-HN', { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">Total presupuesto</p>
+            <p className="font-bold text-gray-900 dark:text-slate-100 mt-1">L {totalPresupuesto.toLocaleString('es-HN', { minimumFractionDigits: 2 })}</p>
           </Card>
           <Card padding="sm">
-            <p className="text-xs text-gray-500">Total gastado</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">Total gastado</p>
             <p className="font-bold text-red-500 mt-1">L {totalGastado.toLocaleString('es-HN', { minimumFractionDigits: 2 })}</p>
           </Card>
           <Card padding="sm">
-            <p className="text-xs text-gray-500">Disponible</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">Disponible</p>
             <p className={`font-bold mt-1 ${totalPresupuesto - totalGastado < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
               L {(totalPresupuesto - totalGastado).toLocaleString('es-HN', { minimumFractionDigits: 2 })}
             </p>
@@ -101,12 +101,12 @@ export default function PresupuestosClientPage({ budgets, categories, mes, anio,
 
       <Card padding="none">
         {budgets.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
+          <div className="text-center py-12 text-gray-400 dark:text-slate-500">
             <p className="text-base">No hay presupuestos para este mes</p>
             <p className="text-sm mt-1">Agrega categorías para establecer límites de gasto</p>
           </div>
         ) : (
-          <div className="px-6 divide-y divide-gray-50">
+          <div className="px-6 divide-y divide-gray-50 dark:divide-slate-700">
             {budgets.map(budget => (
               <BudgetRow key={budget.id} budget={budget} onChanged={handleChanged} />
             ))}

@@ -27,7 +27,6 @@ export default function AhorroProgramadoClientPage({ initialScheduled, ultimoIng
 
   const activos = initialScheduled.filter(s => s.activo)
 
-  // Calcular total programado basado en el último ingreso
   const totalProgramado = ultimoIngreso
     ? activos.reduce((sum, s) => {
         const monto = s.tipo === 'porcentaje' ? (ultimoIngreso * s.valor) / 100 : s.valor
@@ -39,8 +38,8 @@ export default function AhorroProgramadoClientPage({ initialScheduled, ultimoIng
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ahorro Programado</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Ahorro Programado</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
             {activos.length} reglas activas
             {totalProgramado !== null && ` · ${formatHNL(totalProgramado)} por quincena`}
           </p>
@@ -52,8 +51,8 @@ export default function AhorroProgramadoClientPage({ initialScheduled, ultimoIng
       </div>
 
       {/* Info */}
-      <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-800 flex items-start gap-3">
-        <Sparkles className="h-5 w-5 shrink-0 mt-0.5 text-blue-500" />
+      <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 px-4 py-3 text-sm text-blue-800 dark:text-blue-300 flex items-start gap-3">
+        <Sparkles className="h-5 w-5 shrink-0 mt-0.5 text-blue-500 dark:text-blue-400" />
         <div>
           <p className="font-medium mb-1">¿Cómo funciona?</p>
           <p>Cada quincena cuando recibes tu pago, el Panel Principal te muestra un botón para aplicar estos ahorros antes de gastar. El monto se distribuye automáticamente entre tus metas activas según su prioridad. Lo que quede después es tu sobrante disponible.</p>
@@ -62,15 +61,15 @@ export default function AhorroProgramadoClientPage({ initialScheduled, ultimoIng
 
       {/* Preview basado en último ingreso */}
       {ultimoIngreso !== null && activos.length > 0 && (
-        <div className="rounded-xl bg-white border border-blue-100 px-4 py-3">
-          <p className="text-xs text-gray-500 mb-2">Basado en tu último ingreso de {formatHNL(ultimoIngreso)}</p>
+        <div className="rounded-xl bg-white dark:bg-slate-800 border border-blue-100 dark:border-slate-700 px-4 py-3">
+          <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">Basado en tu último ingreso de {formatHNL(ultimoIngreso)}</p>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Total a ahorrar automáticamente</span>
-            <span className="font-bold text-blue-600">{formatHNL(totalProgramado ?? 0)}</span>
+            <span className="text-gray-600 dark:text-slate-300">Total a ahorrar automáticamente</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400">{formatHNL(totalProgramado ?? 0)}</span>
           </div>
           <div className="flex justify-between text-sm mt-1">
-            <span className="text-gray-600">Disponible para gastar</span>
-            <span className="font-semibold text-gray-700">{formatHNL(ultimoIngreso - (totalProgramado ?? 0))}</span>
+            <span className="text-gray-600 dark:text-slate-300">Disponible para gastar</span>
+            <span className="font-semibold text-gray-700 dark:text-slate-200">{formatHNL(ultimoIngreso - (totalProgramado ?? 0))}</span>
           </div>
         </div>
       )}

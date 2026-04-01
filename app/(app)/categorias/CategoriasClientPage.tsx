@@ -71,8 +71,8 @@ export default function CategoriasClientPage({ categories }: Props) {
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Categorías</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{categories.length} categorías en total</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Categorías</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{categories.length} categorías en total</p>
         </div>
         <Button onClick={() => openCreate('gasto')}>
           <Plus className="h-4 w-4" />
@@ -127,10 +127,10 @@ function Section({ title, categories, onEdit, onDelete, onToggle, onAdd }: Secti
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">{title}</h2>
+        <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">{title}</h2>
         <button
           onClick={onAdd}
-          className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 transition-colors"
+          className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors"
         >
           <Plus className="h-3 w-3" />
           Agregar
@@ -138,14 +138,13 @@ function Section({ title, categories, onEdit, onDelete, onToggle, onAdd }: Secti
       </div>
 
       {categories.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-400">
+        <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 py-8 text-center text-sm text-gray-400 dark:text-slate-500">
           No hay categorías de {title.toLowerCase()}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm divide-y divide-gray-50 dark:divide-slate-700">
           {categories.map(cat => (
             <div key={cat.id} className={`flex items-center gap-3 px-4 py-3 ${!cat.is_active ? 'opacity-50' : ''}`}>
-              {/* Color dot + icono */}
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0"
                 style={{ backgroundColor: `${cat.color}20` }}
@@ -153,33 +152,28 @@ function Section({ title, categories, onEdit, onDelete, onToggle, onAdd }: Secti
                 <CategoryIcon nombre={cat.icono} color={cat.color} />
               </div>
 
-              {/* Nombre */}
-              <span className="flex-1 text-sm font-medium text-gray-900 truncate">{cat.nombre}</span>
+              <span className="flex-1 text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{cat.nombre}</span>
 
-              {/* Badge inactiva */}
-              {!cat.is_active && (
-                <Badge variant="gray">Oculta</Badge>
-              )}
+              {!cat.is_active && <Badge variant="gray">Oculta</Badge>}
 
-              {/* Acciones */}
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   onClick={() => onToggle(cat)}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
                   title={cat.is_active ? 'Ocultar' : 'Mostrar'}
                 >
                   {cat.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
                 <button
                   onClick={() => onEdit(cat)}
-                  className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors"
+                  className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
                   title="Editar"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => onDelete(cat)}
-                  className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                  className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                   title="Eliminar"
                 >
                   <Trash2 className="h-4 w-4" />

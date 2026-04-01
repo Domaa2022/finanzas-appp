@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Trash2, Calendar, ChevronDown, ChevronUp, Pause, Play, Wallet, ArrowRight } from 'lucide-react'
+import { Trash2, Calendar, ChevronDown, ChevronUp, Pause, Play, Wallet, ArrowRight, ArrowLeft } from 'lucide-react'
 import { SavingsGoal, SavingsAllocation } from '@/lib/types/database'
 import { formatHNL } from '@/lib/utils/currency'
 import { formatDate, diasRestantes } from '@/lib/utils/dates'
@@ -10,14 +10,17 @@ import { calcularPorcentaje } from '@/lib/utils/calculations'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
+import { Input } from '@/components/ui/Input'
 import { createClient } from '@/lib/supabase/client'
 import { TransferirDesdeGeneralModal } from '@/components/ahorros/TransferirDesdeGeneralModal'
+import { TransferirAQuincenaModal } from '@/components/ahorros/TransferirAQuincenaModal'
 
 interface GoalCardProps {
   goal: SavingsGoal
   allocations?: SavingsAllocation[]
   onChanged: () => void
-  metasRegulares?: SavingsGoal[]   // Solo necesario para el Fondo General
+  metasRegulares?: SavingsGoal[]
 }
 
 const estadoBadge: Record<string, 'green' | 'yellow' | 'gray' | 'blue'> = {
@@ -36,8 +39,35 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [modalTransferir, setModalTransferir] = useState(false)
+  const [modalQuincena, setModalQuincena] = useState(false)
+  const [modalEnviarGeneral, setModalEnviarGeneral] = useState(false)
+  const [montoEnviar, setMontoEnviar] = useState('')
+  const [loadingEnviar, setLoadingEnviar] = useState(false)
   const pct = goal.es_general ? 100 : calcularPorcentaje(goal.monto_actual, goal.monto_objetivo)
   const dias = goal.fecha_limite ? diasRestantes(goal.fecha_limite) : null
+
+  async function handleEnviarAGeneral() {
+    const monto = parseFloat(montoEnviar)
+    if (!monto || monto <= 0) { toast.error('Ingresa un monto válido'); return }
+    if (monto > goal.monto_actual + 0.005) { toast.error(`Saldo insuficiente (${formatHNL(goal.monto_actual)})`); return }
+    setLoadingEnviar(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setLoadingEnviar(false); return }
+    const { error } = await supabase.rpc('transfer_to_general', {
+      p_user_id: user.id,
+      p_source_goal_id: goal.id,
+      p_amount: monto,
+    })
+    if (error) toast.error(error.message || 'Error al trasladar')
+    else {
+      toast.success(`${formatHNL(monto)} enviados al Fondo General`)
+      setModalEnviarGeneral(false)
+      setMontoEnviar('')
+      onChanged()
+    }
+    setLoadingEnviar(false)
+  }
 
   async function handleDelete() {
     if (!confirm('¿Eliminar? Se perderán los registros de ahorro asociados.')) return
@@ -61,21 +91,21 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
   // Tarjeta especial para Fondo General
   if (goal.es_general) {
     return (
-      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 shadow-sm p-5">
+      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/40 shadow-sm p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-emerald-100 rounded-lg">
-              <Wallet className="h-4 w-4 text-emerald-600" />
+            <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
+              <Wallet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Fondo General</h3>
-              <p className="text-xs text-gray-500">Ahorro sin meta específica</p>
+              <h3 className="font-semibold text-gray-900 dark:text-slate-100">Fondo General</h3>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Ahorro sin meta específica</p>
             </div>
           </div>
           <button
             onClick={handleDelete}
             disabled={loading}
-            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+            className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             title="Eliminar fondo general"
           >
             <Trash2 className="h-4 w-4" />
@@ -83,26 +113,39 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-500">Saldo acumulado</span>
-          <span className="text-2xl font-bold text-emerald-600">{formatHNL(goal.monto_actual)}</span>
+          <span className="text-xs text-gray-500 dark:text-slate-400">Saldo acumulado</span>
+          <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatHNL(goal.monto_actual)}</span>
         </div>
 
-        {goal.monto_actual > 0 && metasRegulares.filter(g => g.monto_objetivo - g.monto_actual > 0.01).length > 0 && (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setModalTransferir(true)}
-            className="mt-2 w-full border-emerald-200 text-emerald-700 hover:bg-emerald-100 text-xs"
-          >
-            <ArrowRight className="h-3 w-3" />
-            Trasladar a una meta
-          </Button>
+        {goal.monto_actual > 0 && (
+          <div className="mt-2 flex flex-col gap-2">
+            {metasRegulares.filter(g => g.monto_objetivo - g.monto_actual > 0.01).length > 0 && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setModalTransferir(true)}
+                className="w-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-xs"
+              >
+                <ArrowRight className="h-3 w-3" />
+                Trasladar a una meta
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setModalQuincena(true)}
+              className="w-full border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 text-xs"
+            >
+              <ArrowRight className="h-3 w-3" />
+              Apoyar quincena actual
+            </Button>
+          </div>
         )}
 
         {allocations.length > 0 && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="flex items-center gap-1 mt-3 text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
           >
             {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             {allocations.length} movimientos
@@ -110,11 +153,11 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
         )}
 
         {expanded && (
-          <div className="mt-2 space-y-1 border-t border-emerald-100 pt-2">
+          <div className="mt-2 space-y-1 border-t border-emerald-100 dark:border-emerald-800/40 pt-2">
             {allocations.slice(0, 10).map(alloc => (
-              <div key={alloc.id} className="flex justify-between text-xs text-gray-500">
+              <div key={alloc.id} className="flex justify-between text-xs text-gray-500 dark:text-slate-400">
                 <span>{formatDate(alloc.fecha)}{alloc.notas ? ` · ${alloc.notas}` : ''}</span>
-                <span className={`font-medium ${alloc.monto >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                <span className={`font-medium ${alloc.monto >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
                   {alloc.monto >= 0 ? '+' : ''}{formatHNL(alloc.monto)}
                 </span>
               </div>
@@ -129,26 +172,33 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
           metasDestino={metasRegulares}
           onSuccess={onChanged}
         />
+
+        <TransferirAQuincenaModal
+          open={modalQuincena}
+          onClose={() => setModalQuincena(false)}
+          fondoDisponible={goal.monto_actual}
+          onSuccess={onChanged}
+        />
       </div>
     )
   }
 
   // Tarjeta normal para metas regulares
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-gray-900 truncate">{goal.nombre}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-slate-100 truncate">{goal.nombre}</h3>
             <Badge variant={estadoBadge[goal.estado]}>{estadoLabel[goal.estado]}</Badge>
           </div>
-          {goal.fecha_limite && (
-            <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+          {goal.fecha_limite && goal.estado !== 'completada' && (
+            <div className="flex items-center gap-1 mt-1 text-xs text-gray-400 dark:text-slate-500">
               <Calendar className="h-3 w-3" />
               <span>{formatDate(goal.fecha_limite)}</span>
-              {dias !== null && (
-                <span className={dias < 0 ? 'text-red-500' : dias < 30 ? 'text-yellow-600' : ''}>
-                  ({dias < 0 ? `Vencida hace ${Math.abs(dias)} días` : `${dias} días restantes`})
+              {dias !== null && dias >= 0 && (
+                <span className={dias < 30 ? 'text-yellow-600 dark:text-yellow-500' : ''}>
+                  ({dias} días restantes)
                 </span>
               )}
             </div>
@@ -159,7 +209,7 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
             <button
               onClick={togglePausa}
               disabled={loading}
-              className="p-1.5 text-gray-400 hover:text-yellow-500 transition-colors"
+              className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors"
               title={goal.estado === 'pausada' ? 'Reactivar' : 'Pausar'}
             >
               {goal.estado === 'pausada' ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
@@ -168,7 +218,7 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
           <button
             onClick={handleDelete}
             disabled={loading}
-            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+            className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -178,14 +228,14 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
       <ProgressBar value={pct} showLabel />
 
       <div className="flex justify-between mt-2 text-sm">
-        <span className="font-medium text-emerald-600">{formatHNL(goal.monto_actual)}</span>
-        <span className="text-gray-400">de {formatHNL(goal.monto_objetivo)}</span>
+        <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatHNL(goal.monto_actual)}</span>
+        <span className="text-gray-400 dark:text-slate-500">de {formatHNL(goal.monto_objetivo)}</span>
       </div>
 
       {allocations.length > 0 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          className="flex items-center gap-1 mt-3 text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
         >
           {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           {allocations.length} asignaciones
@@ -193,15 +243,73 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
       )}
 
       {expanded && (
-        <div className="mt-2 space-y-1 border-t border-gray-50 pt-2">
+        <div className="mt-2 space-y-1 border-t border-gray-50 dark:border-slate-700 pt-2">
           {allocations.slice(0, 10).map(alloc => (
-            <div key={alloc.id} className="flex justify-between text-xs text-gray-500">
+            <div key={alloc.id} className="flex justify-between text-xs text-gray-500 dark:text-slate-400">
               <span>{formatDate(alloc.fecha)}{alloc.notas ? ` · ${alloc.notas}` : ''}</span>
-              <span className="font-medium text-emerald-600">+{formatHNL(alloc.monto)}</span>
+              <span className={`font-medium ${alloc.monto >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                {alloc.monto >= 0 ? '+' : ''}{formatHNL(alloc.monto)}
+              </span>
             </div>
           ))}
         </div>
       )}
+
+      {/* Botón enviar al fondo general */}
+      {goal.estado === 'activa' && goal.monto_actual > 0 && (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setModalEnviarGeneral(true)}
+          className="mt-3 w-full text-xs text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700"
+        >
+          <ArrowLeft className="h-3 w-3" />
+          Enviar al Fondo General
+        </Button>
+      )}
+
+      {/* Modal enviar al fondo general */}
+      <Modal
+        open={modalEnviarGeneral}
+        onClose={() => { setModalEnviarGeneral(false); setMontoEnviar('') }}
+        title={`Enviar de "${goal.nombre}" al Fondo General`}
+        size="sm"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="rounded-lg bg-gray-50 dark:bg-slate-700/50 px-4 py-3 flex items-center justify-between text-sm">
+            <span className="text-gray-500 dark:text-slate-400">Saldo disponible en la meta</span>
+            <span className="font-semibold text-gray-800 dark:text-slate-100">{formatHNL(goal.monto_actual)}</span>
+          </div>
+          <Input
+            label="Monto a enviar (L)"
+            type="number"
+            min="0"
+            step="0.01"
+            max={goal.monto_actual}
+            placeholder="0.00"
+            value={montoEnviar}
+            onChange={e => setMontoEnviar(e.target.value)}
+          />
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => { setModalEnviarGeneral(false); setMontoEnviar('') }}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleEnviarAGeneral}
+              loading={loadingEnviar}
+              disabled={!montoEnviar || parseFloat(montoEnviar) <= 0}
+              className="flex-1"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Enviar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

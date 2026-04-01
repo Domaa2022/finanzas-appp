@@ -36,8 +36,8 @@ export default function IngresoClientPage({ initialIncomes }: Props) {
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ingresos</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Este mes: <span className="font-medium text-emerald-600">{formatHNL(totalMes)}</span></p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Ingresos</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Este mes: <span className="font-medium text-emerald-600">{formatHNL(totalMes)}</span></p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4" />

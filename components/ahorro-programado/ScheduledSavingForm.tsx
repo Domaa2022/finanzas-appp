@@ -98,7 +98,7 @@ export function ScheduledSavingForm({ onSuccess, onCancel }: ScheduledSavingForm
         />
       </div>
 
-      <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+      <p className="text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-700 rounded-lg px-3 py-2">
         Este monto se distribuirá entre tus metas de ahorro activas según su prioridad cuando apliques el ahorro programado.
       </p>
 

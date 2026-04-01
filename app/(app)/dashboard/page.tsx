@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const { mes, anio } = getCurrentMonth()
   const { start, end } = getMonthRange(mes, anio)
 
-  const [incomesRes, expensesRes, allocationsRes, goalsRes, fixedRes, scheduledRes] = await Promise.all([
+  const [incomesRes, expensesRes, allocationsRes, goalsRes, fixedRes, scheduledRes, cashRes] = await Promise.all([
     supabase
       .from('income_entries')
       .select('id, monto, fecha, fuente, categories(nombre, color)')
@@ -46,6 +46,10 @@ export default async function DashboardPage() {
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true }),
+    supabase
+      .from('cash_entries')
+      .select('tipo, monto')
+      .eq('user_id', user.id),
   ])
 
   const incomes = incomesRes.data || []
@@ -54,6 +58,11 @@ export default async function DashboardPage() {
   const goals = goalsRes.data || []
   const gastosFijos = fixedRes.data || []
   const ahorrosProgramados = scheduledRes.data || []
+  const cashEntries = cashRes.data || []
+  const cashBalance = cashEntries.reduce(
+    (sum: number, e: any) => sum + (e.tipo === 'entrada' ? e.monto : -e.monto),
+    0,
+  )
 
   // --- Quincena actual ---
   const ultimoIngreso = incomes[0] ?? null
@@ -177,6 +186,7 @@ export default async function DashboardPage() {
       goals={goals}
       chartData={chartData}
       quincenaData={quincenaData}
+      cashBalance={cashBalance}
     />
   )
 }

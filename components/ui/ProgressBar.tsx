@@ -11,14 +11,14 @@ export function ProgressBar({ value, className = '', color, showLabel = false }:
 
   return (
     <div className={`w-full ${className}`}>
-      <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+      <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, backgroundColor: bgColor }}
         />
       </div>
       {showLabel && (
-        <p className="mt-1 text-xs text-right text-gray-500">{pct}%</p>
+        <p className="mt-1 text-xs text-right text-gray-500 dark:text-slate-400">{pct}%</p>
       )}
     </div>
   )

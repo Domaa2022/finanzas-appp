@@ -68,7 +68,7 @@ export function ScheduledSavingList({ items, ingresoReferencia, onChanged }: Sch
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-10 text-gray-400">
+      <div className="text-center py-10 text-gray-400 dark:text-slate-500">
         <p className="text-base">No tienes ahorros programados</p>
         <p className="text-sm mt-1">Agrega un ahorro que se aplique automáticamente</p>
       </div>
@@ -76,14 +76,14 @@ export function ScheduledSavingList({ items, ingresoReferencia, onChanged }: Sch
   }
 
   return (
-    <div className="flex flex-col divide-y divide-gray-50">
+    <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700">
       {items.map(item => {
         const montoCalculado = calcularMonto(item)
         const frecLabel = FRECUENCIA_LABEL[item.frecuencia] ?? 'por quincena'
         const frecBadge = FRECUENCIA_BADGE[item.frecuencia] ?? 'Quincenal'
         return (
           <div key={item.id} className={`flex items-center gap-3 py-3 ${!item.activo ? 'opacity-50' : ''}`}>
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30">
               <span className="text-sm font-bold text-blue-600">
                 {item.tipo === 'porcentaje' ? '%' : 'L'}
               </span>
@@ -91,15 +91,15 @@ export function ScheduledSavingList({ items, ingresoReferencia, onChanged }: Sch
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className={`font-medium text-gray-900 truncate ${!item.activo ? 'line-through' : ''}`}>
+                <p className={`font-medium text-gray-900 dark:text-slate-100 truncate ${!item.activo ? 'line-through' : ''}`}>
                   {item.nombre}
                 </p>
-                <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">
+                <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full shrink-0">
                   {frecBadge}
                 </span>
               </div>
               {montoCalculado !== null && item.activo && (
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-blue-600 dark:text-blue-400">
                   ≈ {formatHNL(montoCalculado)} {frecLabel}
                 </p>
               )}
@@ -112,13 +112,13 @@ export function ScheduledSavingList({ items, ingresoReferencia, onChanged }: Sch
                     type="number"
                     value={editValor}
                     onChange={e => setEditValor(e.target.value)}
-                    className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-20 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     autoFocus
                   />
                   <button onClick={() => handleEditSave(item.id)} className="p-1 text-emerald-600 hover:text-emerald-700">
                     <Check className="h-4 w-4" />
                   </button>
-                  <button onClick={() => setEditingId(null)} className="p-1 text-gray-400 hover:text-gray-600">
+                  <button onClick={() => setEditingId(null)} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300">
                     <X className="h-4 w-4" />
                   </button>
                 </>
@@ -126,10 +126,10 @@ export function ScheduledSavingList({ items, ingresoReferencia, onChanged }: Sch
                 <>
                   <button
                     onClick={() => { setEditingId(item.id); setEditValor(item.valor.toString()) }}
-                    className="text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors flex items-center gap-1"
+                    className="text-sm font-semibold text-gray-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
                   >
                     {item.tipo === 'porcentaje' ? `${item.valor}%` : formatHNL(item.valor)}
-                    <Pencil className="h-3 w-3 text-gray-300" />
+                    <Pencil className="h-3 w-3 text-gray-300 dark:text-slate-600" />
                   </button>
 
                   <button

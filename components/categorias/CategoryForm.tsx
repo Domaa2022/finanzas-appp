@@ -123,12 +123,12 @@ export function CategoryForm({ category, defaultTipo = 'gasto', onSuccess, onCan
 
       {/* Tipo */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-gray-700">Tipo</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Tipo</span>
         <div className="grid grid-cols-2 gap-2">
           {(['gasto', 'ingreso'] as const).map(t => (
             <label key={t} className="flex items-center gap-2 cursor-pointer">
               <input type="radio" value={t} {...register('tipo')} className="sr-only peer" />
-              <span className="w-full text-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 border-gray-200 text-gray-600 hover:bg-gray-50">
+              <span className="w-full text-center rounded-lg border px-3 py-2 text-sm font-medium transition-colors peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:border-emerald-600 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
                 {t === 'gasto' ? 'Gasto' : 'Ingreso'}
               </span>
             </label>
@@ -138,7 +138,7 @@ export function CategoryForm({ category, defaultTipo = 'gasto', onSuccess, onCan
 
       {/* Color */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-gray-700">Color</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Color</span>
         <div className="flex flex-wrap gap-2">
           {COLORES.map(c => (
             <button
@@ -155,7 +155,7 @@ export function CategoryForm({ category, defaultTipo = 'gasto', onSuccess, onCan
 
       {/* Icono */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-gray-700">Ícono</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Ícono</span>
         <div className="flex flex-wrap gap-2">
           {ICONOS.map(({ nombre, componente: Icon }) => (
             <button
@@ -165,11 +165,11 @@ export function CategoryForm({ category, defaultTipo = 'gasto', onSuccess, onCan
               title={nombre}
               className={`p-2 rounded-lg border transition-all ${
                 icono === nombre
-                  ? 'border-emerald-500 bg-emerald-50'
-                  : 'border-gray-200 hover:bg-gray-50'
+                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                  : 'border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700'
               }`}
             >
-              <Icon className="h-4 w-4 text-gray-600" style={{ color: icono === nombre ? color : undefined }} />
+              <Icon className="h-4 w-4 text-gray-600 dark:text-slate-400" style={{ color: icono === nombre ? color : undefined }} />
             </button>
           ))}
         </div>

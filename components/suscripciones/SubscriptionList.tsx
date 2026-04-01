@@ -75,7 +75,7 @@ export function SubscriptionList({ items, onChanged }: Props) {
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-gray-400 dark:text-slate-500">
         <p className="text-base">No tienes suscripciones registradas</p>
         <p className="text-sm mt-1">Agrega tus apps y servicios para llevar el control</p>
       </div>
@@ -84,7 +84,7 @@ export function SubscriptionList({ items, onChanged }: Props) {
 
   return (
     <>
-      <div className="flex flex-col divide-y divide-gray-50">
+      <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700">
         {items.map(item => {
           const inactiva = item.estado !== 'activa'
           return (
@@ -100,12 +100,12 @@ export function SubscriptionList({ items, onChanged }: Props) {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className={`font-medium text-gray-900 truncate ${inactiva ? 'line-through' : ''}`}>
+                  <p className={`font-medium text-gray-900 dark:text-slate-100 truncate ${inactiva ? 'line-through' : ''}`}>
                     {item.nombre}
                   </p>
                   <RenovacionBadge fecha={item.fecha_renovacion} />
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                   <span>{CATEGORIA_LABELS[item.categoria] || item.categoria}</span>
                   {item.fecha_renovacion && (
                     <>
@@ -121,7 +121,7 @@ export function SubscriptionList({ items, onChanged }: Props) {
                   {item.estado !== 'activa' && (
                     <>
                       <span>·</span>
-                      <span className="text-amber-500 capitalize">{item.estado}</span>
+                      <span className="text-amber-500 dark:text-amber-400 capitalize">{item.estado}</span>
                     </>
                   )}
                 </div>
@@ -130,13 +130,13 @@ export function SubscriptionList({ items, onChanged }: Props) {
               {/* Monto + acciones */}
               <div className="flex items-center gap-2 shrink-0">
                 <div className="text-right">
-                  <p className="font-semibold text-gray-800 text-sm">{formatHNL(item.monto)}</p>
-                  <p className="text-xs text-gray-400">/{FRECUENCIA_LABELS[item.frecuencia] || item.frecuencia}</p>
+                  <p className="font-semibold text-gray-800 dark:text-slate-200 text-sm">{formatHNL(item.monto)}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500">/{FRECUENCIA_LABELS[item.frecuencia] || item.frecuencia}</p>
                 </div>
 
                 <button
                   onClick={() => setEditingItem(item)}
-                  className="p-1.5 text-gray-300 hover:text-emerald-600 transition-colors"
+                  className="p-1.5 text-gray-300 dark:text-slate-600 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                   title="Editar"
                 >
                   <Pencil className="h-4 w-4" />
@@ -156,7 +156,7 @@ export function SubscriptionList({ items, onChanged }: Props) {
                 <button
                   onClick={() => handleDelete(item.id)}
                   disabled={deletingId === item.id}
-                  className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                  className="p-1.5 text-gray-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                   title="Eliminar"
                 >
                   <Trash2 className="h-4 w-4" />

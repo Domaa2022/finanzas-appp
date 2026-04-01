@@ -110,7 +110,7 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
         {...register('notas')}
       />
 
-      <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+      <p className="text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-700 rounded-lg px-3 py-2">
         El sobrante del mes se puede enviar a tus metas de ahorro desde el panel principal cuando quieras.
       </p>
 
