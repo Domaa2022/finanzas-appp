@@ -29,9 +29,9 @@ export default async function QuincenaPage() {
 
   return (
     <QuincenaClientPage
-      incomes={incomesRes.data || []}
-      expenses={expensesRes.data || []}
-      allocations={allocationsRes.data || []}
+      incomes={(incomesRes.data || []) as any}
+      expenses={(expensesRes.data || []) as any}
+      allocations={(allocationsRes.data || []) as any}
     />
   )
 }
