@@ -22,10 +22,14 @@ export default async function QuincenaPage() {
       .limit(500),
     supabase
       .from('savings_allocations')
-      .select('id, monto, fecha, income_entry_id, notas, savings_goals(nombre, color)')
+      .select('id, monto, fecha, income_entry_id, notas')
       .eq('user_id', user.id)
       .order('fecha', { ascending: false }),
   ])
+  
+  console.log(incomesRes);
+  console.log(expensesRes);
+    console.log(allocationsRes);
 
   return (
     <QuincenaClientPage

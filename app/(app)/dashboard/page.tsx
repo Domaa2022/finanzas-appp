@@ -76,9 +76,14 @@ export default async function DashboardPage() {
       .filter(e => e.fecha >= inicioQuincena)
       .reduce((s, e) => s + e.monto, 0)
 
-    // Ahorros ya distribuidos para este ingreso
+    // Ahorros ya distribuidos para este ingreso:
+    // - con income_entry_id explícito (distribute_savings / distribute_savings_manual)
+    // - sin income_entry_id pero con fecha >= inicio de la quincena (add_manual_saving)
     const ahorrosYaAplicados = allocations
-      .filter(a => a.income_entry_id === ultimoIngreso.id)
+      .filter(a =>
+        a.income_entry_id === ultimoIngreso.id ||
+        (!a.income_entry_id && a.fecha >= ultimoIngreso.fecha)
+      )
       .reduce((s, a) => s + a.monto, 0)
 
     // Sobrante real = ingreso - gastos - ahorros ya aplicados
@@ -129,7 +134,15 @@ export default async function DashboardPage() {
   const totalIngresos = incomes.reduce((s, i) => s + i.monto, 0)
   const totalGastos = expenses.reduce((s, e) => s + e.monto, 0)
   const totalAhorros = allocations.reduce((s, a) => s + a.monto, 0)
+
+  console.log(totalIngresos);
+  console.log(totalGastos);
+  console.log(totalAhorros);
+
+
+
   const saldoTotal = totalIngresos - totalGastos - totalAhorros
+  console.log(saldoTotal)
 
   // --- Este mes ---
   const ingresosMes = incomes.filter(i => i.fecha >= start && i.fecha <= end).reduce((s, i) => s + i.monto, 0)

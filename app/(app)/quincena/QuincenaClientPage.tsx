@@ -64,7 +64,10 @@ function buildQuincenas(
     const periodExpenses = expenses.filter(
       e => e.fecha >= startDate && (i === 0 ? true : e.fecha < endDate),
     )
-    const periodAllocations = allocations.filter(a => a.income_entry_id === income.id)
+    const periodAllocations = allocations.filter(a =>
+      a.income_entry_id === income.id ||
+      (!a.income_entry_id && a.fecha >= startDate && (i === 0 ? true : a.fecha < endDate))
+    )
 
     const totalGastos = periodExpenses.reduce((s, e) => s + e.monto, 0)
     const totalAhorros = periodAllocations.reduce((s, a) => s + a.monto, 0)
