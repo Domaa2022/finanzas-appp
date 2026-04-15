@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const [incomesRes, expensesRes, allocationsRes, goalsRes, fixedRes, scheduledRes, cashRes] = await Promise.all([
     supabase
       .from('income_entries')
-      .select('id, monto, fecha, fuente, categories(nombre, color)')
+      .select('id, monto, fecha, fuente, frecuencia, es_quincena_actual, categories(nombre, color)')
       .eq('user_id', user.id)
       .order('fecha', { ascending: false })
       .limit(100),
@@ -65,7 +65,8 @@ export default async function DashboardPage() {
   )
 
   // --- Quincena actual ---
-  const ultimoIngreso = incomes[0] ?? null
+  // Prioriza el ingreso fijado; si no hay ninguno, usa el más reciente
+  const ultimoIngreso = incomes.find((i: any) => i.es_quincena_actual) ?? incomes[0] ?? null
   let quincenaData = null
 
   if (ultimoIngreso) {
@@ -118,6 +119,7 @@ export default async function DashboardPage() {
       ultimoIngresoMonto: ultimoIngreso.monto,
       ultimoIngresoFecha: ultimoIngreso.fecha,
       ultimoIngresoFuente: ultimoIngreso.fuente,
+      ultimoIngresoFrecuencia: ultimoIngreso.frecuencia,
       gastosDesdeIngreso: gastosQuincena,
       ahorrosYaAplicados,
       yaAhorroSobrante,

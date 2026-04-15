@@ -10,7 +10,7 @@ export default async function QuincenaPage() {
   const [incomesRes, expensesRes, allocationsRes] = await Promise.all([
     supabase
       .from('income_entries')
-      .select('id, monto, fecha, fuente, ahorro_tipo, ahorro_valor, categories(nombre, color)')
+      .select('id, monto, fecha, fuente, ahorro_tipo, ahorro_valor, es_quincena_actual, categories(nombre, color)')
       .eq('user_id', user.id)
       .order('fecha', { ascending: false })
       .limit(50),
