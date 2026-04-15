@@ -22,6 +22,7 @@ interface IncomeRaw {
   fuente: string
   ahorro_tipo: string
   ahorro_valor: number
+  es_quincena_actual: boolean
   categories: { nombre: string; color: string } | null
 }
 
@@ -56,18 +57,40 @@ function buildQuincenas(
   expenses: ExpenseRaw[],
   allocations: AllocationRaw[],
 ) {
+  const pinnedIdx = incomes.findIndex(i => i.es_quincena_actual)
+  const currentIdx = pinnedIdx !== -1 ? pinnedIdx : 0
+
   return incomes.map((income, i) => {
     const prevIncome = incomes[i - 1]
     const startDate = income.fecha
     const endDate = prevIncome ? prevIncome.fecha : todayISO()
+    const isCurrent = i === currentIdx
+    // Ingresos registrados después de la quincena fijada (i < currentIdx):
+    // son extras/bonos — no se les atribuyen gastos ni ahorros
+    const isExtra = i < currentIdx
 
-    const periodExpenses = expenses.filter(
-      e => e.fecha >= startDate && (i === 0 ? true : e.fecha < endDate),
-    )
-    const periodAllocations = allocations.filter(a =>
-      a.income_entry_id === income.id ||
-      (!a.income_entry_id && a.fecha >= startDate && (i === 0 ? true : a.fecha < endDate))
-    )
+    let periodExpenses: ExpenseRaw[]
+    let periodAllocations: AllocationRaw[]
+
+    if (isExtra) {
+      // Bono/ingreso extra: no lleva gastos propios, todo va a la quincena actual
+      periodExpenses = []
+      periodAllocations = []
+    } else if (isCurrent) {
+      // Quincena actual: toma todos los gastos desde su fecha hasta hoy
+      periodExpenses = expenses.filter(e => e.fecha >= startDate)
+      periodAllocations = allocations.filter(a =>
+        a.income_entry_id === income.id ||
+        (!a.income_entry_id && a.fecha >= startDate)
+      )
+    } else {
+      // Quincenas pasadas: acotadas entre su fecha y la de la siguiente
+      periodExpenses = expenses.filter(e => e.fecha >= startDate && e.fecha < endDate)
+      periodAllocations = allocations.filter(a =>
+        a.income_entry_id === income.id ||
+        (!a.income_entry_id && a.fecha >= startDate && a.fecha < endDate)
+      )
+    }
 
     const totalGastos = periodExpenses.reduce((s, e) => s + e.monto, 0)
     const totalAhorros = periodAllocations.reduce((s, a) => s + a.monto, 0)
@@ -87,7 +110,8 @@ function buildQuincenas(
       income,
       startDate,
       endDate,
-      isCurrent: i === 0,
+      isCurrent,
+      isExtra,
       expenses: periodExpenses,
       allocations: periodAllocations,
       totalGastos,
@@ -282,7 +306,10 @@ function AhorrosList({ allocations }: { allocations: AllocationRaw[] }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function QuincenaClientPage({ incomes, expenses, allocations }: Props) {
-  const [selectedIdx, setSelectedIdx] = useState(0)
+  const pinnedIdx = incomes.findIndex(i => i.es_quincena_actual)
+  const initialIdx = pinnedIdx !== -1 ? pinnedIdx : 0
+
+  const [selectedIdx, setSelectedIdx] = useState(initialIdx)
   const [tab, setTab] = useState<'gastos' | 'ahorros'>('gastos')
   const [catModal, setCatModal] = useState<{ nombre: string; color: string; total: number } | null>(null)
 
@@ -341,12 +368,18 @@ export default function QuincenaClientPage({ incomes, expenses, allocations }: P
           <div className="flex items-center gap-2 justify-center">
             <p className="font-semibold text-gray-900 dark:text-slate-100">{q.income.fuente}</p>
             {q.isCurrent && <Badge variant="green">Actual</Badge>}
+            {q.isExtra && <Badge variant="yellow">Extra</Badge>}
           </div>
           <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
             <CalendarDays className="h-3 w-3 inline mr-1" />
             {formatDate(q.startDate)}
             {!q.isCurrent && ` → ${formatDate(q.endDate)}`}
           </p>
+          {q.isExtra && (
+            <p className="text-xs text-amber-500 dark:text-amber-400 mt-0.5">
+              Los gastos de este período se incluyen en la quincena actual
+            </p>
+          )}
         </div>
 
         <button

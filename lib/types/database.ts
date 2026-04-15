@@ -35,6 +35,7 @@ export interface IncomeEntry {
   ahorro_tipo: AhorroTipo
   ahorro_valor: number
   notas: string | null
+  es_quincena_actual: boolean
   created_at: string
   categories?: Category
 }
