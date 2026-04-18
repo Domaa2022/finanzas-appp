@@ -8,6 +8,7 @@ import { PiggyBank } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { SocialAuthButtons, AuthDivider } from '@/components/auth/SocialAuthButtons'
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -47,7 +48,10 @@ export default function RegistroPage() {
           <p className="text-sm text-gray-500 mt-1">Empieza a controlar tus finanzas</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-4">
+          <SocialAuthButtons />
+          <AuthDivider />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
             label="Nombre"
             type="text"
@@ -76,6 +80,7 @@ export default function RegistroPage() {
             Crear cuenta
           </Button>
         </form>
+        </div>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           ¿Ya tienes cuenta?{' '}

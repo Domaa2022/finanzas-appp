@@ -141,6 +141,35 @@ export interface Subscription {
   created_at: string
 }
 
+export type TipoDeuda = 'deuda' | 'prestamo'
+export type EstadoDeuda = 'activa' | 'pagada' | 'cancelada'
+
+export interface Deuda {
+  id: string
+  user_id: string
+  tipo: TipoDeuda
+  nombre_persona: string
+  descripcion: string | null
+  monto_total: number
+  monto_pagado: number
+  fecha_inicio: string
+  fecha_vencimiento: string | null
+  estado: EstadoDeuda
+  notas: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DeudaPago {
+  id: string
+  user_id: string
+  deuda_id: string
+  monto: number
+  fecha: string
+  notas: string | null
+  created_at: string
+}
+
 export interface BudgetWithSpent extends Budget {
   gastado: number
   restante: number
