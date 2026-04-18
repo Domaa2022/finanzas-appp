@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Rutas públicas
-  const publicRoutes = ['/login', '/registro']
+  const publicRoutes = ['/login', '/registro', '/olvide-contrasena', '/restablecer-contrasena', '/auth/callback']
   const isPublicRoute = publicRoutes.some(r => pathname.startsWith(r))
 
   if (!user && !isPublicRoute) {

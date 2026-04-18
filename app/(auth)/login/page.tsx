@@ -8,6 +8,7 @@ import { PiggyBank } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { SocialAuthButtons, AuthDivider } from '@/components/auth/SocialAuthButtons'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -39,7 +40,10 @@ export default function LoginPage() {
           <p className="text-sm text-gray-500 mt-1">Inicia sesión en tu cuenta</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col gap-4">
+          <SocialAuthButtons />
+          <AuthDivider />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input
             label="Correo electrónico"
             type="email"
@@ -56,10 +60,16 @@ export default function LoginPage() {
             onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
             required
           />
+          <div className="flex justify-end -mt-2">
+            <Link href="/olvide-contrasena" className="text-xs text-emerald-600 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           <Button type="submit" loading={loading} className="w-full mt-2">
             Iniciar sesión
           </Button>
         </form>
+        </div>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           ¿No tienes cuenta?{' '}

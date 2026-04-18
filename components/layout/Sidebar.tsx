@@ -16,6 +16,7 @@ import {
   Settings,
   CalendarRange,
   Wallet,
+  HandCoins,
 } from 'lucide-react'
 
 const navItems = [
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/gastos', label: 'Gastos', icon: ArrowDownCircle },
   { href: '/gastos-fijos', label: 'Gastos Fijos', icon: ReceiptText },
   { href: '/suscripciones', label: 'Suscripciones', icon: CreditCard },
+  { href: '/deudas', label: 'Deudas', icon: HandCoins },
   { href: '/ahorros', label: 'Ahorros', icon: PiggyBank },
   { href: '/ahorro-programado', label: 'Ahorro Prog.', icon: Sparkles },
   { href: '/quincena', label: 'Quincena', icon: CalendarRange },

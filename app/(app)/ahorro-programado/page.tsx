@@ -7,6 +7,7 @@ export default async function AhorroProgramadoPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  //
   // Traemos los programados y el último ingreso para preview de montos
   const [scheduledRes, lastIncomeRes] = await Promise.all([
     supabase
