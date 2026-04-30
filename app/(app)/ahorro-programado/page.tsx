@@ -19,7 +19,7 @@ export default async function AhorroProgramadoPage() {
       .from('income_entries')
       .select('monto')
       .eq('user_id', user.id)
-      .order('fecha', { ascending: false })
+      .eq('es_quincena_actual', true)
       .limit(1)
       .single(),
   ])

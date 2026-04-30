@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { createClient } from '@/lib/supabase/client'
 import { formatHNL } from '@/lib/utils/currency'
 import { formatDate } from '@/lib/utils/dates'
+import { tr } from 'date-fns/locale'
 
 interface QuincenaInfo {
   id: string
@@ -37,8 +38,8 @@ export function TransferirAQuincenaModal({ open, onClose, fondoDisponible, onSuc
     const supabase = createClient()
     supabase
       .from('income_entries')
-      .select('id, fuente, fecha, monto')
-      .order('fecha', { ascending: false })
+      .select('id, fuente, fecha, monto, es_quincena_actual')
+      .eq('es_quincena_actual', true)
       .limit(1)
       .single()
       .then(({ data }) => {
