@@ -170,6 +170,32 @@ export interface DeudaPago {
   created_at: string
 }
 
+export type CooperativaTipo = 'aportaciones' | 'retirable'
+export type CooperativaMovimientoTipo = 'deposito' | 'retiro' | 'interes' | 'transferencia_quincena' | 'ajuste'
+
+export interface CooperativaCuenta {
+  id: string
+  user_id: string
+  tipo: CooperativaTipo
+  saldo: number
+  ultima_aplicacion_intereses: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CooperativaMovimiento {
+  id: string
+  user_id: string
+  cuenta_id: string
+  tipo: CooperativaMovimientoTipo
+  monto: number
+  fecha: string
+  descripcion: string | null
+  income_entry_id: string | null
+  mes_aplicado: string | null
+  created_at: string
+}
+
 export interface BudgetWithSpent extends Budget {
   gastado: number
   restante: number
