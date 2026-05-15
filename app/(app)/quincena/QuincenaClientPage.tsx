@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown,
   PiggyBank, Sparkles, ArrowRight,
-  CalendarDays,
+  CalendarDays, Building2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { formatHNL } from '@/lib/utils/currency'
@@ -44,10 +44,20 @@ interface AllocationRaw {
   savings_goals: { nombre: string; color: string | null } | null
 }
 
+interface CoopTransferRaw {
+  id: string
+  monto: number
+  fecha: string
+  income_entry_id: string | null
+  descripcion: string | null
+  cooperativa_cuentas: { tipo: 'aportaciones' | 'retirable' } | null
+}
+
 interface Props {
   incomes: IncomeRaw[]
   expenses: ExpenseRaw[]
   allocations: AllocationRaw[]
+  cooperativaTransfers?: CoopTransferRaw[]
 }
 
 // ─── Quincena builder ─────────────────────────────────────────────────────────
@@ -56,6 +66,7 @@ function buildQuincenas(
   incomes: IncomeRaw[],
   expenses: ExpenseRaw[],
   allocations: AllocationRaw[],
+  cooperativaTransfers: CoopTransferRaw[],
 ) {
   const pinnedIdx = incomes.findIndex(i => i.es_quincena_actual)
   const currentIdx = pinnedIdx !== -1 ? pinnedIdx : 0
@@ -71,11 +82,13 @@ function buildQuincenas(
 
     let periodExpenses: ExpenseRaw[]
     let periodAllocations: AllocationRaw[]
+    let periodCoop: CoopTransferRaw[]
 
     if (isExtra) {
       // Bono/ingreso extra: no lleva gastos propios, todo va a la quincena actual
       periodExpenses = []
       periodAllocations = []
+      periodCoop = []
     } else if (isCurrent) {
       // Quincena actual: toma todos los gastos desde su fecha hasta hoy
       periodExpenses = expenses.filter(e => e.fecha >= startDate)
@@ -83,6 +96,7 @@ function buildQuincenas(
         a.income_entry_id === income.id ||
         (!a.income_entry_id && a.fecha >= startDate)
       )
+      periodCoop = cooperativaTransfers.filter(c => c.income_entry_id === income.id)
     } else {
       // Quincenas pasadas: acotadas entre su fecha y la de la siguiente
       periodExpenses = expenses.filter(e => e.fecha >= startDate && e.fecha < endDate)
@@ -90,11 +104,13 @@ function buildQuincenas(
         a.income_entry_id === income.id ||
         (!a.income_entry_id && a.fecha >= startDate && a.fecha < endDate)
       )
+      periodCoop = cooperativaTransfers.filter(c => c.income_entry_id === income.id)
     }
 
     const totalGastos = periodExpenses.reduce((s, e) => s + e.monto, 0)
     const totalAhorros = periodAllocations.reduce((s, a) => s + a.monto, 0)
-    const sobrante = income.monto - totalGastos - totalAhorros
+    const totalCoop = periodCoop.reduce((s, c) => s + c.monto, 0)
+    const sobrante = income.monto - totalGastos - totalAhorros - totalCoop
 
     const byCategory: Record<string, { nombre: string; color: string; total: number }> = {}
     for (const e of periodExpenses) {
@@ -114,8 +130,10 @@ function buildQuincenas(
       isExtra,
       expenses: periodExpenses,
       allocations: periodAllocations,
+      cooperativa: periodCoop,
       totalGastos,
       totalAhorros,
+      totalCoop,
       sobrante,
       categoriasGasto,
     }
@@ -303,19 +321,46 @@ function AhorrosList({ allocations }: { allocations: AllocationRaw[] }) {
   )
 }
 
+// ─── Lista de transferencias a cooperativa ───────────────────────────────────
+
+function CooperativaList({ transfers }: { transfers: CoopTransferRaw[] }) {
+  if (transfers.length === 0)
+    return <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-6">Sin transferencias a cooperativa en esta quincena</p>
+
+  return (
+    <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700">
+      {transfers.map(t => {
+        const label = t.cooperativa_cuentas?.tipo === 'aportaciones' ? 'Aportaciones' : 'Ahorro Retirable'
+        return (
+          <div key={t.id} className="flex items-center gap-3 py-2.5">
+            <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+              <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800 dark:text-slate-100 truncate">{label}</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500">{t.descripcion || formatDate(t.fecha)}</p>
+            </div>
+            <p className="text-sm font-semibold text-emerald-600 shrink-0">{formatHNL(t.monto)}</p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
-export default function QuincenaClientPage({ incomes, expenses, allocations }: Props) {
+export default function QuincenaClientPage({ incomes, expenses, allocations, cooperativaTransfers = [] }: Props) {
   const pinnedIdx = incomes.findIndex(i => i.es_quincena_actual)
   const initialIdx = pinnedIdx !== -1 ? pinnedIdx : 0
 
   const [selectedIdx, setSelectedIdx] = useState(initialIdx)
-  const [tab, setTab] = useState<'gastos' | 'ahorros'>('gastos')
+  const [tab, setTab] = useState<'gastos' | 'ahorros' | 'cooperativa'>('gastos')
   const [catModal, setCatModal] = useState<{ nombre: string; color: string; total: number } | null>(null)
 
   const quincenas = useMemo(
-    () => buildQuincenas(incomes, expenses, allocations),
-    [incomes, expenses, allocations],
+    () => buildQuincenas(incomes, expenses, allocations, cooperativaTransfers),
+    [incomes, expenses, allocations, cooperativaTransfers],
   )
 
   if (quincenas.length === 0) {
@@ -396,14 +441,20 @@ export default function QuincenaClientPage({ incomes, expenses, allocations }: P
         <div className="grid grid-cols-4 gap-3 mb-4">
           <StatCard label="Recibido" value={q.income.monto} icon={TrendingUp} color="text-emerald-500" prev={prev?.income.monto} />
           <StatCard label="Gastado" value={q.totalGastos} icon={TrendingDown} color="text-red-500" prev={prev?.totalGastos} />
-          <StatCard label="Ahorrado" value={q.totalAhorros} icon={PiggyBank} color="text-blue-500" prev={prev?.totalAhorros} />
+          <StatCard
+            label="Ahorrado"
+            value={q.totalAhorros + q.totalCoop}
+            icon={PiggyBank}
+            color="text-blue-500"
+            prev={prev ? prev.totalAhorros + prev.totalCoop : undefined}
+          />
           <StatCard label="Sobrante" value={Math.max(q.sobrante, 0)} icon={Sparkles} color="text-violet-500" prev={prev ? Math.max(prev.sobrante, 0) : undefined} />
         </div>
 
         <DistribucionBar
           ingreso={q.income.monto}
           gastos={q.totalGastos}
-          ahorros={q.totalAhorros}
+          ahorros={q.totalAhorros + q.totalCoop}
           sobrante={q.sobrante}
         />
       </Card>
@@ -448,7 +499,7 @@ export default function QuincenaClientPage({ incomes, expenses, allocations }: P
       {/* Tabs */}
       <Card padding="none">
         <div className="flex border-b border-gray-100 dark:border-slate-700">
-          {(['gastos', 'ahorros'] as const).map(t => (
+          {(['gastos', 'ahorros', 'cooperativa'] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -460,7 +511,9 @@ export default function QuincenaClientPage({ incomes, expenses, allocations }: P
             >
               {t === 'gastos'
                 ? `Gastos (${q.expenses.length})`
-                : `Ahorros (${q.allocations.length})`}
+                : t === 'ahorros'
+                  ? `Ahorros (${q.allocations.length})`
+                  : `Cooperativa (${q.cooperativa.length})`}
             </button>
           ))}
         </div>
@@ -468,7 +521,9 @@ export default function QuincenaClientPage({ incomes, expenses, allocations }: P
         <div className="px-5 py-2">
           {tab === 'gastos'
             ? <GastosList expenses={q.expenses} />
-            : <AhorrosList allocations={q.allocations} />
+            : tab === 'ahorros'
+              ? <AhorrosList allocations={q.allocations} />
+              : <CooperativaList transfers={q.cooperativa} />
           }
         </div>
       </Card>

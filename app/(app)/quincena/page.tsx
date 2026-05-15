@@ -7,7 +7,7 @@ export default async function QuincenaPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [incomesRes, expensesRes, allocationsRes] = await Promise.all([
+  const [incomesRes, expensesRes, allocationsRes, coopRes] = await Promise.all([
     supabase
       .from('income_entries')
       .select('id, monto, fecha, fuente, ahorro_tipo, ahorro_valor, es_quincena_actual, categories(nombre, color)')
@@ -25,17 +25,20 @@ export default async function QuincenaPage() {
       .select('id, monto, fecha, income_entry_id, notas')
       .eq('user_id', user.id)
       .order('fecha', { ascending: false }),
+    supabase
+      .from('cooperativa_movimientos')
+      .select('id, monto, fecha, income_entry_id, descripcion, cooperativa_cuentas(tipo)')
+      .eq('user_id', user.id)
+      .eq('tipo', 'transferencia_quincena')
+      .not('income_entry_id', 'is', null),
   ])
-  
-  console.log(incomesRes);
-  console.log(expensesRes);
-    console.log(allocationsRes);
 
   return (
     <QuincenaClientPage
       incomes={(incomesRes.data || []) as any}
       expenses={(expensesRes.data || []) as any}
       allocations={(allocationsRes.data || []) as any}
+      cooperativaTransfers={(coopRes.data || []) as any}
     />
   )
 }

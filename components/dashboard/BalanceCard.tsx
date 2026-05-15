@@ -17,7 +17,7 @@ export function BalanceCard({ saldoTotal, ingresosMes, gastosMes, ahorroMes }: B
           <Wallet className="h-4 w-4 text-emerald-200" />
           <span className="text-sm text-emerald-100">Saldo total</span>
         </div>
-        <p className="text-2xl font-bold">{formatHNL(saldoTotal)}</p>
+        <p className="text-2xl font-bold">{formatHNL(saldoTotal == - 0 ?  0 : saldoTotal)}</p>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-5">

@@ -7,10 +7,13 @@ import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export default async function DashboardPage() {
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  
+  debugger;
   const { mes, anio } = getCurrentMonth()
   const { start, end } = getMonthRange(mes, anio)
 
@@ -19,14 +22,12 @@ export default async function DashboardPage() {
       .from('income_entries')
       .select('id, monto, fecha, fuente, frecuencia, es_quincena_actual, categories(nombre, color)')
       .eq('user_id', user.id)
-      .order('fecha', { ascending: false })
-      .limit(100),
+      .order('fecha', { ascending: false }),
     supabase
       .from('expenses')
       .select('monto, fecha, descripcion, notas, categories(nombre, color)')
       .eq('user_id', user.id)
-      .order('fecha', { ascending: false })
-      .limit(100),
+      .order('fecha', { ascending: false }),
     supabase
       .from('savings_allocations')
       .select('monto, fecha, income_entry_id')
@@ -54,6 +55,8 @@ export default async function DashboardPage() {
 
   const incomes = incomesRes.data || []
   const expenses = expensesRes.data || []
+
+
   const allocations = allocationsRes.data || []
   const goals = goalsRes.data || []
   const gastosFijos = fixedRes.data || []
@@ -137,14 +140,7 @@ export default async function DashboardPage() {
   const totalGastos = expenses.reduce((s, e) => s + e.monto, 0)
   const totalAhorros = allocations.reduce((s, a) => s + a.monto, 0)
 
-  console.log(totalIngresos);
-  console.log(totalGastos);
-  console.log(totalAhorros);
-
-
-
-  const saldoTotal = totalIngresos - totalGastos - totalAhorros
-  console.log(saldoTotal)
+  const saldoTotal = parseFloat((totalIngresos - totalGastos - totalAhorros).toFixed(2))
 
   // --- Este mes ---
   const ingresosMes = incomes.filter(i => i.fecha >= start && i.fecha <= end).reduce((s, i) => s + i.monto, 0)
