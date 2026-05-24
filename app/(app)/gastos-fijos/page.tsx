@@ -10,7 +10,7 @@ export default async function GastosFijosPage() {
   const [fixedRes, categoriesRes] = await Promise.all([
     supabase
       .from('fixed_expenses')
-      .select('*, categories(*)')
+      .select('*, categories(*), fondo:savings_goals!fixed_expenses_savings_goal_id_fkey(id, monto_actual, monto_objetivo)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true }),
     supabase

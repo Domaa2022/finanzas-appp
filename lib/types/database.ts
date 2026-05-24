@@ -62,6 +62,7 @@ export interface SavingsGoal {
   prioridad: number
   estado: EstadoMeta
   es_general: boolean
+  es_gasto_fijo: boolean
   created_at: string
   updated_at: string
 }
@@ -101,6 +102,8 @@ export interface ScheduledSaving {
   created_at: string
 }
 
+export type FrecuenciaGastoFijo = 'quincenal' | 'mensual'
+
 export interface FixedExpense {
   id: string
   user_id: string
@@ -108,8 +111,13 @@ export interface FixedExpense {
   monto: number
   category_id: string | null
   activo: boolean
+  frecuencia: FrecuenciaGastoFijo
+  dia_pago: number | null
+  savings_goal_id: string | null
   created_at: string
   categories?: Category
+  /** Fondo de ahorro asociado (solo gastos mensuales). Embebido vía savings_goal_id. */
+  fondo?: Pick<SavingsGoal, 'id' | 'monto_actual' | 'monto_objetivo'> | null
 }
 
 export interface CashEntry {

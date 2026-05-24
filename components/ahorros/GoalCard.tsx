@@ -36,6 +36,8 @@ const estadoLabel: Record<string, string> = {
 }
 
 export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [] }: GoalCardProps) {
+  console.log(goal)
+  console.log(allocations.reduce((s, i) => s + i.monto, 0))
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [modalTransferir, setModalTransferir] = useState(false)

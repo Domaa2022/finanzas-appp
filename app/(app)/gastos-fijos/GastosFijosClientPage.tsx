@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Plus, ReceiptText } from 'lucide-react'
+import { Plus, ReceiptText, PiggyBank } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { FixedExpense, Category } from '@/lib/types/database'
 import { FixedExpenseForm } from '@/components/gastos-fijos/FixedExpenseForm'
 import { FixedExpenseList } from '@/components/gastos-fijos/FixedExpenseList'
+import { FixedExpenseMonthlyCard } from '@/components/gastos-fijos/FixedExpenseMonthlyCard'
 import { Modal } from '@/components/ui/Modal'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -29,13 +30,23 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
     router.refresh()
   }, [router])
 
-  const activos = initialFixed.filter(f => f.activo)
-  const totalFijo = activos.reduce((s, f) => s + f.monto, 0)
+  const quincenales = initialFixed.filter(f => f.frecuencia !== 'mensual')
+  const mensuales = initialFixed.filter(f => f.frecuencia === 'mensual')
 
-  // Registrar solo los gastos fijos activos que aún no se han aplicado esta quincena
+  const quincenalesActivos = quincenales.filter(f => f.activo)
+  const mensualesActivos = mensuales.filter(f => f.activo)
+
+  // Lo quincenal puro (se registra completo al recibir el pago)
+  const totalQuincenal = quincenalesActivos.reduce((s, f) => s + f.monto, 0)
+  // La mitad de cada pago mensual es lo que apartas por quincena
+  const totalMensualPorQuincena = mensualesActivos.reduce((s, f) => s + f.monto / 2, 0)
+  // Lo que realmente se va de cada quincena
+  const totalPorQuincena = totalQuincenal + totalMensualPorQuincena
+
+  // Registrar solo los gastos fijos quincenales que aún no se aplicaron esta quincena
   async function handleAplicar() {
-    if (activos.length === 0) {
-      toast.error('No hay gastos fijos activos')
+    if (quincenalesActivos.length === 0) {
+      toast.error('No hay gastos fijos quincenales activos')
       return
     }
 
@@ -44,7 +55,6 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setApplying(false); return }
 
-    // Fecha del último ingreso (inicio de la quincena actual)
     const { data: ultimoIngreso } = await supabase
       .from('income_entries')
       .select('fecha')
@@ -55,7 +65,6 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
 
     const fechaDesde = ultimoIngreso?.fecha ?? todayISO()
 
-    // Gastos fijos ya registrados desde el último ingreso
     const { data: gastosExistentes } = await supabase
       .from('expenses')
       .select('descripcion')
@@ -65,10 +74,10 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
 
     const yaAplicados = new Set((gastosExistentes || []).map(e => e.descripcion))
 
-    const pendientes = activos.filter(f => !yaAplicados.has(f.nombre))
+    const pendientes = quincenalesActivos.filter(f => !yaAplicados.has(f.nombre))
 
     if (pendientes.length === 0) {
-      toast.info('Todos los gastos fijos ya están registrados esta quincena')
+      toast.info('Todos los gastos fijos quincenales ya están registrados esta quincena')
       setApplying(false)
       return
     }
@@ -105,8 +114,13 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Gastos Fijos</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-            {activos.length} activos · Total quincenal:{' '}
-            <span className="font-medium text-red-500">{formatHNL(totalFijo)}</span>
+            Por quincena:{' '}
+            <span className="font-medium text-red-500">{formatHNL(totalPorQuincena)}</span>
+            {totalMensualPorQuincena > 0 && (
+              <span className="text-xs text-gray-400 dark:text-slate-500">
+                {' '}(incluye {formatHNL(totalMensualPorQuincena)} de mensuales)
+              </span>
+            )}
           </p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
@@ -115,34 +129,55 @@ export default function GastosFijosClientPage({ initialFixed, categories }: Prop
         </Button>
       </div>
 
-      {/* Info de uso */}
-      <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 px-4 py-3 text-sm text-amber-800 dark:text-amber-300 flex items-start gap-3">
-        <ReceiptText className="h-5 w-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-        <p>
-          Estos son tus gastos que se repiten cada quincena (renta, servicios, etc.).
-          Cuando recibas tu pago, usa el botón <strong>"Registrar gastos fijos"</strong> para
-          agregarlos todos de una vez como gastos del día.
-        </p>
-      </div>
-
-      {/* Botón de aplicar */}
-      {activos.length > 0 && (
-        <Button
-          variant="secondary"
-          onClick={handleAplicar}
-          loading={applying}
-          className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
-        >
-          <ReceiptText className="h-4 w-4" />
-          Registrar {activos.length} gastos fijos como gastos de hoy ({formatHNL(totalFijo)})
-        </Button>
-      )}
-
-      <Card padding="none">
-        <div className="px-6 py-4">
-          <FixedExpenseList items={initialFixed} onChanged={() => router.refresh()} />
+      {/* ─── Mensuales con ahorro ─── */}
+      <section className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-2">
+          <PiggyBank className="h-4 w-4 text-violet-500" />
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Pagos mensuales</h2>
+          {mensuales.length > 0 && (
+            <span className="text-xs text-gray-400 dark:text-slate-500">· apartas la mitad cada quincena</span>
+          )}
         </div>
-      </Card>
+
+        {mensuales.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-4 py-4 text-center text-sm text-gray-400 dark:text-slate-500">
+            Gastos que pagas una vez al mes y vas ahorrando entre quincenas. Agrégalos con el tipo "Mensual".
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {mensuales.map(item => (
+              <FixedExpenseMonthlyCard key={item.id} item={item} onChanged={() => router.refresh()} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ─── Quincenales ─── */}
+      <section className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-2">
+          <ReceiptText className="h-4 w-4 text-amber-500" />
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Quincenales</h2>
+          <span className="text-xs text-gray-400 dark:text-slate-500">· se registran al recibir tu pago</span>
+        </div>
+
+        {quincenalesActivos.length > 0 && (
+          <Button
+            variant="secondary"
+            onClick={handleAplicar}
+            loading={applying}
+            className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+          >
+            <ReceiptText className="h-4 w-4" />
+            Registrar {quincenalesActivos.length} gastos quincenales como gastos de hoy ({formatHNL(totalQuincenal)})
+          </Button>
+        )}
+
+        <Card padding="none">
+          <div className="px-6 py-4">
+            <FixedExpenseList items={quincenales} onChanged={() => router.refresh()} />
+          </div>
+        </Card>
+      </section>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Agregar gasto fijo" size="sm">
         <FixedExpenseForm

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getCurrentMonth, getMonthRange } from '@/lib/utils/dates'
+import { getCurrentMonth, getMonthRange, proximoDiaPago, diasRestantes } from '@/lib/utils/dates'
 import { RecentTransaction } from '@/lib/types/database'
 import DashboardClientPage from './DashboardClientPage'
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
@@ -12,8 +12,6 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  
-  debugger;
   const { mes, anio } = getCurrentMonth()
   const { start, end } = getMonthRange(mes, anio)
 
@@ -36,10 +34,11 @@ export default async function DashboardPage() {
       .from('savings_goals')
       .select('*')
       .eq('user_id', user.id)
+      .or('es_gasto_fijo.is.null,es_gasto_fijo.eq.false')
       .order('created_at', { ascending: false }),
     supabase
       .from('fixed_expenses')
-      .select('*, categories(*)')
+      .select('*, categories(*), fondo:savings_goals!fixed_expenses_savings_goal_id_fkey(id, monto_actual, monto_objetivo)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true }),
     supabase
@@ -96,8 +95,9 @@ export default async function DashboardPage() {
     // ¿El sobrante final ya fue guardado? (sobrante <= 0 o no hay más que guardar)
     const yaAhorroSobrante = sobranteReal <= 0.01
 
-    // ¿Los gastos fijos ya se aplicaron?
-    const fijosActivos = gastosFijos.filter((f: any) => f.activo)
+    // ¿Los gastos fijos quincenales ya se aplicaron? (los mensuales se manejan aparte)
+    const gastosFijosQuincenales = gastosFijos.filter((f: any) => f.frecuencia !== 'mensual')
+    const fijosActivos = gastosFijosQuincenales.filter((f: any) => f.activo)
     const gastosDesdeQuincena = expenses.filter(e => e.fecha >= ultimoIngreso.fecha)
     const gastosFijosAplicados = fijosActivos.length > 0 && fijosActivos.every((f: any) =>
       gastosDesdeQuincena.some(e =>
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
       ahorrosYaAplicados,
       yaAhorroSobrante,
       hayMetas: goals.some((g: any) => g.estado === 'activa' && !g.es_general),
-      gastosFijos,
+      gastosFijos: gastosFijosQuincenales,
       gastosFijosAplicados,
       ahorrosProgramados,
       ahorrosProgramadosAplicados,
@@ -185,8 +185,33 @@ export default async function DashboardPage() {
     }
   })
 
+  // --- Pagos mensuales (gastos fijos con ahorro) ---
+  const pagosMensuales = gastosFijos
+    .filter((f: any) => f.frecuencia === 'mensual' && f.activo)
+    .map((f: any) => {
+      const apartado = f.fondo?.monto_actual ?? 0
+      const fechaPago = f.dia_pago ? proximoDiaPago(f.dia_pago) : null
+      return {
+        id: f.id,
+        nombre: f.nombre,
+        monto: f.monto,
+        apartado,
+        falta: Math.max(f.monto - apartado, 0),
+        pct: f.monto > 0 ? Math.round((apartado / f.monto) * 100) : 0,
+        fechaPago,
+        dias: fechaPago ? diasRestantes(fechaPago) : null,
+        color: f.categories?.color ?? null,
+      }
+    })
+    .sort((a, b) => {
+      if (a.dias === null) return 1
+      if (b.dias === null) return -1
+      return a.dias - b.dias
+    })
+
   return (
     <DashboardClientPage
+      pagosMensuales={pagosMensuales}
       saldoTotal={saldoTotal}
       ingresosMes={ingresosMes}
       gastosMes={gastosMes}

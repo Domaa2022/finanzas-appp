@@ -34,3 +34,24 @@ export function diasRestantes(fechaLimite: string): number {
   const diff = limite.getTime() - hoy.getTime()
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
+
+/**
+ * Devuelve la próxima fecha (ISO) en que cae el día `dia` del mes.
+ * Si el día ya pasó este mes, usa el mes siguiente. Ajusta el día al
+ * último día del mes cuando el mes es más corto (ej. día 31 en febrero).
+ */
+export function proximoDiaPago(dia: number, desde: Date = new Date()): string {
+  const base = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate())
+  const diaActual = base.getDate()
+
+  let anio = base.getFullYear()
+  let mes = base.getMonth() // 0-11
+  if (dia < diaActual) {
+    mes += 1
+    if (mes > 11) { mes = 0; anio += 1 }
+  }
+
+  const ultimoDiaMes = new Date(anio, mes + 1, 0).getDate()
+  const diaEfectivo = Math.min(dia, ultimoDiaMes)
+  return format(new Date(anio, mes, diaEfectivo), 'yyyy-MM-dd')
+}

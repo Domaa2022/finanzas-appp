@@ -17,6 +17,7 @@ interface Props {
 }
 
 export default function AhorrosClientPage({ initialGoals, allocations }: Props) {
+  
   const router = useRouter()
   const [modalMetaOpen, setModalMetaOpen] = useState(false)
   const [modalAhorroOpen, setModalAhorroOpen] = useState(false)

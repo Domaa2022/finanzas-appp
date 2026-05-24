@@ -9,6 +9,7 @@ import { SavingsOverview } from '@/components/dashboard/SavingsOverview'
 import { IncomeExpenseChart } from '@/components/dashboard/IncomeExpenseChart'
 import { QuincenaCard } from '@/components/dashboard/QuincenaCard'
 import { SobranteMesCard } from '@/components/dashboard/SobranteMesCard'
+import { ProximosPagos, PagoMensual } from '@/components/dashboard/ProximosPagos'
 import { Card } from '@/components/ui/Card'
 import { formatHNL } from '@/lib/utils/currency'
 
@@ -30,6 +31,7 @@ interface QuincenaData {
 }
 
 interface Props {
+  pagosMensuales: PagoMensual[]
   saldoTotal: number
   ingresosMes: number
   gastosMes: number
@@ -44,6 +46,7 @@ interface Props {
 }
 
 export default function DashboardClientPage({
+  pagosMensuales,
   saldoTotal,
   ingresosMes,
   gastosMes,
@@ -88,6 +91,8 @@ export default function DashboardClientPage({
           Registra tu primer ingreso para ver el resumen de tu último período
         </div>
       )}
+
+      <ProximosPagos pagos={pagosMensuales} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">

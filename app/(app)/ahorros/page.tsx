@@ -12,6 +12,7 @@ export default async function AhorrosPage() {
       .from('savings_goals')
       .select('*')
       .eq('user_id', user.id)
+      .or('es_gasto_fijo.is.null,es_gasto_fijo.eq.false')
       .order('created_at', { ascending: false }),
     supabase
       .from('savings_allocations')
@@ -19,6 +20,8 @@ export default async function AhorrosPage() {
       .eq('user_id', user.id)
       .order('fecha', { ascending: false }),
   ])
+
+
 
   return (
     <AhorrosClientPage
