@@ -89,11 +89,21 @@ export default async function DashboardPage() {
       )
       .reduce((s, a) => s + a.monto, 0)
 
-    // Sobrante real = ingreso - gastos - ahorros ya aplicados
-    const sobranteReal = ultimoIngreso.monto - gastosQuincena - ahorrosYaAplicados
+    // Apoyos desde el Fondo General hacia esta quincena (allocations negativas).
+    // No son ahorro "real": es dinero retirado del fondo para gastar, así que
+    // suben el sobrante gastable pero NO deben reactivar los botones de ahorro.
+    const apoyoQuincena = allocations
+      .filter(a => a.income_entry_id === ultimoIngreso.id && a.monto < 0)
+      .reduce((s, a) => s - a.monto, 0)
 
-    // ¿El sobrante final ya fue guardado? (sobrante <= 0 o no hay más que guardar)
-    const yaAhorroSobrante = sobranteReal <= 0.01
+    // Ahorro realmente aplicado, descontando los apoyos.
+    const ahorrosRealesAplicados = ahorrosYaAplicados + apoyoQuincena
+
+    // Sobrante que aún se puede ahorrar (sin contar el dinero traído por apoyos)
+    const sobranteAhorrable = ultimoIngreso.monto - gastosQuincena - ahorrosRealesAplicados
+
+    // ¿El sobrante final ya fue guardado? (no queda nada por ahorrar)
+    const yaAhorroSobrante = sobranteAhorrable <= 0.01
 
     // ¿Los gastos fijos quincenales ya se aplicaron? (los mensuales se manejan aparte)
     const gastosFijosQuincenales = gastosFijos.filter((f: any) => f.frecuencia !== 'mensual')
@@ -115,7 +125,7 @@ export default async function DashboardPage() {
           : s.valor
         return sum + monto
       }, 0)
-    const ahorrosProgramadosAplicados = totalProgramado > 0 && ahorrosYaAplicados >= totalProgramado - 0.01
+    const ahorrosProgramadosAplicados = totalProgramado > 0 && ahorrosRealesAplicados >= totalProgramado - 0.01
 
     quincenaData = {
       ultimoIngresoId: ultimoIngreso.id,
@@ -125,6 +135,7 @@ export default async function DashboardPage() {
       ultimoIngresoFrecuencia: ultimoIngreso.frecuencia,
       gastosDesdeIngreso: gastosQuincena,
       ahorrosYaAplicados,
+      sobranteAhorrable,
       yaAhorroSobrante,
       hayMetas: goals.some((g: any) => g.estado === 'activa' && !g.es_general),
       gastosFijos: gastosFijosQuincenales,

@@ -57,6 +57,7 @@ interface QuincenaCardProps {
   ultimoIngresoFrecuencia: string
   gastosDesdeIngreso: number
   ahorrosYaAplicados: number
+  sobranteAhorrable: number
   yaAhorroSobrante: boolean
   hayMetas: boolean
   gastosFijos: FixedExpense[]
@@ -74,6 +75,7 @@ export function QuincenaCard({
   ultimoIngresoFrecuencia,
   gastosDesdeIngreso,
   ahorrosYaAplicados,
+  sobranteAhorrable,
   yaAhorroSobrante,
   gastosFijos,
   gastosFijosAplicados,
@@ -155,7 +157,7 @@ export function QuincenaCard({
   }
 
   async function handleAhorrarSobrante() {
-    if (sobrante <= 0) { toast.error('No hay sobrante para ahorrar'); return }
+    if (sobranteAhorrable <= 0) { toast.error('No hay sobrante para ahorrar'); return }
     setLoadingAhorro(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -164,13 +166,13 @@ export function QuincenaCard({
     const { error } = await supabase.rpc('distribute_savings', {
       p_income_id: ultimoIngresoId,
       p_user_id: user.id,
-      p_total_savings: sobrante,
+      p_total_savings: sobranteAhorrable,
     })
 
     if (error) {
       toast.error('Error al guardar sobrante')
     } else {
-      toast.success(`${formatHNL(sobrante)} guardados`)
+      toast.success(`${formatHNL(sobranteAhorrable)} guardados`)
       router.refresh()
     }
     setLoadingAhorro(false)
@@ -435,24 +437,26 @@ export function QuincenaCard({
         )}
 
         {/* CTA sobrante */}
-        {sobrante <= 0 ? (
+        {!yaAhorroSobrante ? (
+          <Button onClick={handleAhorrarSobrante} loading={loadingAhorro} className="w-full">
+            <PiggyBank className="h-4 w-4" />
+            Ahorrar sobrante ({formatHNL(sobranteAhorrable)})
+            <ArrowRight className="h-4 w-4 ml-auto" />
+          </Button>
+        ) : sobrante > 0 ? (
+          // Ya se distribuyó todo el ahorro; el sobrante restante proviene de
+          // un apoyo del Fondo General y está disponible para gastar.
+          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-400">
+            <PiggyBank className="h-4 w-4" />
+            Todo el sobrante fue enviado a tus metas
+          </div>
+        ) : (
           <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-slate-700/50 px-3 py-2.5 text-sm text-gray-500 dark:text-slate-400">
             <PiggyBank className="h-4 w-4" />
             {ahorrosYaAplicados > 0
               ? `Has ahorrado ${formatHNL(ahorrosYaAplicados)} este período`
               : 'Sin sobrante disponible este período'}
           </div>
-        ) : yaAhorroSobrante ? (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-400">
-            <PiggyBank className="h-4 w-4" />
-            Todo el sobrante fue enviado a tus metas
-          </div>
-        ) : (
-          <Button onClick={handleAhorrarSobrante} loading={loadingAhorro} className="w-full">
-            <PiggyBank className="h-4 w-4" />
-            Ahorrar sobrante ({formatHNL(sobrante)})
-            <ArrowRight className="h-4 w-4 ml-auto" />
-          </Button>
         )}
       </div>
 
