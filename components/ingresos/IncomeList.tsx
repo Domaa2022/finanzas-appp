@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Trash2, ChevronDown, ChevronUp, Pin, PinOff } from 'lucide-react'
+import { Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { IncomeEntry } from '@/lib/types/database'
 import { formatHNL } from '@/lib/utils/currency'
 import { formatDate } from '@/lib/utils/dates'
@@ -35,37 +35,6 @@ const ahorroLabel = (tipo: string, valor: number) => {
 export function IncomeList({ items, onDeleted }: IncomeListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [pinningId, setPinningId] = useState<string | null>(null)
-
-  async function handleTogglePin(item: IncomeEntry) {
-    setPinningId(item.id)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setPinningId(null); return }
-
-    if (item.es_quincena_actual) {
-      // Desfijar
-      const { error } = await supabase
-        .from('income_entries')
-        .update({ es_quincena_actual: false })
-        .eq('id', item.id)
-      if (error) toast.error('Error al desfijar')
-      else { toast.success('Quincena desfijada'); onDeleted() }
-    } else {
-      // Desfijar todos y fijar este
-      await supabase
-        .from('income_entries')
-        .update({ es_quincena_actual: false })
-        .eq('user_id', user.id)
-      const { error } = await supabase
-        .from('income_entries')
-        .update({ es_quincena_actual: true })
-        .eq('id', item.id)
-      if (error) toast.error('Error al fijar quincena')
-      else { toast.success(`"${item.fuente}" fijado como quincena actual`); onDeleted() }
-    }
-    setPinningId(null)
-  }
 
   async function handleDelete(id: string) {
     if (!confirm('¿Eliminar este ingreso? También se eliminarán las asignaciones de ahorro asociadas.')) return
@@ -114,21 +83,6 @@ export function IncomeList({ items, onDeleted }: IncomeListProps) {
                   <p className="text-xs text-gray-400 dark:text-slate-500">Ahorro: {ahorroLabel(item.ahorro_tipo, item.ahorro_valor)}</p>
                 )}
               </div>
-              <button
-                onClick={() => handleTogglePin(item)}
-                disabled={pinningId === item.id}
-                title={item.es_quincena_actual ? 'Desfijar quincena' : 'Fijar como quincena actual'}
-                className={`p-1 transition-colors ${
-                  item.es_quincena_actual
-                    ? 'text-violet-500 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300'
-                    : 'text-gray-300 dark:text-slate-600 hover:text-violet-400 dark:hover:text-violet-500'
-                }`}
-              >
-                {item.es_quincena_actual
-                  ? <PinOff className="h-4 w-4" />
-                  : <Pin className="h-4 w-4" />
-                }
-              </button>
               <button
                 onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
                 className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"

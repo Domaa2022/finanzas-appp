@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import {
-  PiggyBank, TrendingDown, TrendingUp, ArrowRight,
+  PiggyBank, TrendingDown, TrendingUp,
   ReceiptText, ExternalLink, Sparkles, CalendarClock,
   Clock, ChevronDown, ChevronUp, Pin, Wallet,
 } from 'lucide-react'
@@ -78,7 +78,6 @@ export function QuincenaCard({
   gastoHoy,
   ahorrosYaAplicados,
   sobranteAhorrable,
-  yaAhorroSobrante,
   gastosFijos,
   gastosFijosAplicados,
   ahorrosProgramados,
@@ -86,7 +85,6 @@ export function QuincenaCard({
   metasActivas,
 }: QuincenaCardProps) {
   const router = useRouter()
-  const [loadingAhorro, setLoadingAhorro] = useState(false)
   const [loadingFijos, setLoadingFijos] = useState(false)
   const [modalDistribuirOpen, setModalDistribuirOpen] = useState(false)
   const [ritmoExpanded, setRitmoExpanded] = useState(false)
@@ -170,28 +168,6 @@ export function QuincenaCard({
       router.refresh()
     }
     setLoadingFijos(false)
-  }
-
-  async function handleAhorrarSobrante() {
-    if (sobranteAhorrable <= 0) { toast.error('No hay sobrante para ahorrar'); return }
-    setLoadingAhorro(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { error } = await supabase.rpc('distribute_savings', {
-      p_income_id: ultimoIngresoId,
-      p_user_id: user.id,
-      p_total_savings: sobranteAhorrable,
-    })
-
-    if (error) {
-      toast.error('Error al guardar sobrante')
-    } else {
-      toast.success(`${formatHNL(sobranteAhorrable)} guardados`)
-      router.refresh()
-    }
-    setLoadingAhorro(false)
   }
 
   return (
@@ -512,19 +488,14 @@ export function QuincenaCard({
           </div>
         )}
 
-        {/* CTA sobrante */}
-        {!yaAhorroSobrante ? (
-          <Button onClick={handleAhorrarSobrante} loading={loadingAhorro} className="w-full">
-            <PiggyBank className="h-4 w-4" />
-            Ahorrar sobrante ({formatHNL(sobranteAhorrable)})
-            <ArrowRight className="h-4 w-4 ml-auto" />
-          </Button>
-        ) : sobrante > 0 ? (
-          // Ya se distribuyó todo el ahorro; el sobrante restante proviene de
-          // un apoyo del Fondo General y está disponible para gastar.
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-400">
-            <PiggyBank className="h-4 w-4" />
-            Todo el sobrante fue enviado a tus metas
+        {/* El sobrante se envía al Fondo General al iniciar un nuevo período */}
+        {sobranteAhorrable > 0.01 ? (
+          <div className="flex items-start gap-2 rounded-xl bg-violet-50 dark:bg-violet-900/20 px-3 py-2.5 text-sm text-violet-700 dark:text-violet-300">
+            <PiggyBank className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>
+              Tu sobrante de <span className="font-semibold">{formatHNL(sobranteAhorrable)}</span> pasará
+              al Fondo General cuando registres un nuevo período y lo fijes como actual.
+            </span>
           </div>
         ) : (
           <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-slate-700/50 px-3 py-2.5 text-sm text-gray-500 dark:text-slate-400">

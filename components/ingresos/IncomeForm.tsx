@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { Pin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { todayISO } from '@/lib/utils/dates'
+import { formatHNL } from '@/lib/utils/currency'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -46,8 +47,33 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Si se fija como quincena actual, desmarcar las demás primero
+    // Si se fija como quincena actual:
+    //  1. Cierra el período que deja de ser actual → su sobrante va al Fondo General
+    //  2. Desmarca las demás quincenas
     if (fijarActual) {
+      // Período actual previo: el fijado, o el más reciente si no hay fijado
+      const { data: actual } = await supabase
+        .from('income_entries')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('es_quincena_actual', { ascending: false })
+        .order('fecha', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (actual) {
+        // No bloquea el registro del ingreso: si el cierre falla solo avisa.
+        const { data: enviado, error: cierreError } = await supabase.rpc('enviar_sobrante_al_fondo', {
+          p_user_id: user.id,
+          p_income_id: actual.id,
+        })
+        if (cierreError) {
+          toast.warning('No se pudo enviar el sobrante del período anterior al Fondo General')
+        } else if (enviado && enviado > 0) {
+          toast.success(`Sobrante de ${formatHNL(enviado)} enviado al Fondo General`)
+        }
+      }
+
       await supabase
         .from('income_entries')
         .update({ es_quincena_actual: false })
@@ -148,7 +174,7 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
       </button>
 
       <p className="text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-700 rounded-lg px-3 py-2">
-        El sobrante del mes se puede enviar a tus metas de ahorro desde el panel principal cuando quieras.
+        Al fijar este ingreso como quincena actual, el sobrante del período anterior se enviará automáticamente a tu Fondo General.
       </p>
 
       <div className="flex gap-3 pt-2">
