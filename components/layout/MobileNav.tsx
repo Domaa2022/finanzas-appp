@@ -1,47 +1,111 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, PiggyBank, ReceiptText, Sparkles, BarChart3, FileText, Tags, CreditCard, Settings, CalendarRange, Wallet, HandCoins, Building2 } from 'lucide-react'
+import {
+  LayoutDashboard, ArrowDownCircle, ArrowUpCircle, PiggyBank,
+  ReceiptText, Sparkles, BarChart3, FileText, Tags, CreditCard,
+  Settings, CalendarRange, Wallet, HandCoins, Building2, Menu, X,
+} from 'lucide-react'
 
-const navItems = [
+const primaryItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
   { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
   { href: '/gastos', label: 'Gastos', icon: ArrowDownCircle },
-  { href: '/gastos-fijos', label: 'Fijos', icon: ReceiptText },
-  { href: '/suscripciones', label: 'Suscripc.', icon: CreditCard },
-  { href: '/deudas', label: 'Deudas', icon: HandCoins },
   { href: '/ahorros', label: 'Ahorros', icon: PiggyBank },
-  { href: '/ahorro-programado', label: 'Prog.', icon: Sparkles },
-  { href: '/cooperativa', label: 'Coop.', icon: Building2 },
+]
+
+const moreItems = [
+  { href: '/gastos-fijos', label: 'Gastos Fijos', icon: ReceiptText },
+  { href: '/suscripciones', label: 'Suscripciones', icon: CreditCard },
+  { href: '/deudas', label: 'Deudas', icon: HandCoins },
+  { href: '/ahorro-programado', label: 'Ahorro Prog.', icon: Sparkles },
+  { href: '/cooperativa', label: 'Cooperativa', icon: Building2 },
   { href: '/quincena', label: 'Quincena', icon: CalendarRange },
   { href: '/efectivo', label: 'Efectivo', icon: Wallet },
-  { href: '/presupuestos', label: 'Presup.', icon: BarChart3 },
+  { href: '/presupuestos', label: 'Presupuestos', icon: BarChart3 },
   { href: '/reportes', label: 'Reportes', icon: FileText },
-  { href: '/categorias', label: 'Categ.', icon: Tags },
-  { href: '/configuracion', label: 'Config.', icon: Settings },
+  { href: '/categorias', label: 'Categorías', icon: Tags },
+  { href: '/configuracion', label: 'Configuración', icon: Settings },
 ]
 
 export function MobileNav() {
   const pathname = usePathname()
+  const [moreOpen, setMoreOpen] = useState(false)
+
+  // El botón "Más" se marca activo si la ruta actual está dentro de su lista
+  const moreActive = moreItems.some(i => pathname.startsWith(i.href))
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 flex overflow-x-auto z-40 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-      {navItems.map(({ href, label, icon: Icon }) => {
-        const active = pathname.startsWith(href)
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={`flex flex-none flex-col items-center gap-1 px-3 py-2 text-xs font-medium transition-colors ${
-              active ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
-            }`}
-          >
-            <Icon className="h-5 w-5" />
-            {label}
-          </Link>
-        )
-      })}
-    </nav>
+    <>
+      {/* Hoja inferior "Más opciones" */}
+      {moreOpen && (
+        <div className="md:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMoreOpen(false)} />
+          <div className="absolute bottom-0 left-0 right-0 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 pb-[env(safe-area-inset-bottom)] shadow-2xl">
+            <div className="flex items-center justify-between px-5 pt-4 pb-1">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Más opciones</h2>
+              <button
+                onClick={() => setMoreOpen(false)}
+                aria-label="Cerrar"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 p-4 pt-2">
+              {moreItems.map(({ href, label, icon: Icon }) => {
+                const active = pathname.startsWith(href)
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 text-xs font-medium text-center transition-colors ${
+                      active
+                        ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                        : 'text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 ${active ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-slate-500'}`} />
+                    {label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barra inferior fija */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 pb-[env(safe-area-inset-bottom)]">
+        {primaryItems.map(({ href, label, icon: Icon }) => {
+          const active = pathname.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex flex-1 flex-col items-center gap-1 px-1 py-2 text-xs font-medium transition-colors ${
+                active ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              {label}
+            </Link>
+          )
+        })}
+        <button
+          onClick={() => setMoreOpen(v => !v)}
+          aria-label="Más opciones"
+          className={`flex flex-1 flex-col items-center gap-1 px-1 py-2 text-xs font-medium transition-colors ${
+            moreOpen || moreActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
+          }`}
+        >
+          <Menu className="h-5 w-5" />
+          Más
+        </button>
+      </nav>
+    </>
   )
 }
