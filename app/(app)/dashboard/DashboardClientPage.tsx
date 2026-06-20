@@ -20,6 +20,7 @@ interface QuincenaData {
   ultimoIngresoFuente: string
   ultimoIngresoFrecuencia: string
   gastosDesdeIngreso: number
+  gastoHoy: number
   ahorrosYaAplicados: number
   sobranteAhorrable: number
   yaAhorroSobrante: boolean

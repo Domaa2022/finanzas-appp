@@ -73,10 +73,16 @@ export default async function DashboardPage() {
 
   if (ultimoIngreso) {
     const inicioQuincena = ultimoIngreso.fecha
+    const hoy = format(new Date(), 'yyyy-MM-dd')
 
     // Gastos desde el último ingreso
     const gastosQuincena = expenses
       .filter(e => e.fecha >= inicioQuincena)
+      .reduce((s, e) => s + e.monto, 0)
+
+    // Gastos de hoy (para el presupuesto diario)
+    const gastoHoy = expenses
+      .filter(e => e.fecha === hoy)
       .reduce((s, e) => s + e.monto, 0)
 
     // Ahorros ya distribuidos para este ingreso:
@@ -134,6 +140,7 @@ export default async function DashboardPage() {
       ultimoIngresoFuente: ultimoIngreso.fuente,
       ultimoIngresoFrecuencia: ultimoIngreso.frecuencia,
       gastosDesdeIngreso: gastosQuincena,
+      gastoHoy,
       ahorrosYaAplicados,
       sobranteAhorrable,
       yaAhorroSobrante,

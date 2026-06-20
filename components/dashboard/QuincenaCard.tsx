@@ -4,7 +4,7 @@ import { useState } from 'react'
 import {
   PiggyBank, TrendingDown, TrendingUp, ArrowRight,
   ReceiptText, ExternalLink, Sparkles, CalendarClock,
-  Clock, ChevronDown, ChevronUp, Pin,
+  Clock, ChevronDown, ChevronUp, Pin, Wallet,
 } from 'lucide-react'
 import { differenceInDays, addDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -56,6 +56,7 @@ interface QuincenaCardProps {
   ultimoIngresoFuente: string
   ultimoIngresoFrecuencia: string
   gastosDesdeIngreso: number
+  gastoHoy: number
   ahorrosYaAplicados: number
   sobranteAhorrable: number
   yaAhorroSobrante: boolean
@@ -74,6 +75,7 @@ export function QuincenaCard({
   ultimoIngresoFuente,
   ultimoIngresoFrecuencia,
   gastosDesdeIngreso,
+  gastoHoy,
   ahorrosYaAplicados,
   sobranteAhorrable,
   yaAhorroSobrante,
@@ -110,6 +112,20 @@ export function QuincenaCard({
   const gastoDiario = cycle.elapsed > 0 ? Math.round(gastosDesdeIngreso / cycle.elapsed) : 0
   const proyeccionGasto = gastoDiario * cycle.cycleDays
   const sobranteProyectado = Math.max(ultimoIngresoMonto - proyeccionGasto - ahorrosYaAplicados, 0)
+
+  // Presupuesto diario: reparte el sobrante entre los días que faltan para el
+  // próximo pago. Si hoy gastas de más, el exceso sale del presupuesto de mañana
+  // (el límite del día siguiente baja porque queda menos sobrante para más días).
+  const diasParaPago = Math.max(cycle.remaining, 1)
+  const sobranteInicioHoy = sobrante + gastoHoy            // sobrante antes de los gastos de hoy
+  const limiteDiario = sobranteInicioHoy / diasParaPago
+  const restanteHoy = Math.max(limiteDiario - gastoHoy, 0)
+  const excesoHoy = Math.max(gastoHoy - limiteDiario, 0)
+  const overBudget = gastoHoy > limiteDiario
+  const pctGastoHoy = limiteDiario > 0 ? (gastoHoy / limiteDiario) * 100 : 0
+  const fillPct = Math.min(pctGastoHoy, 100)
+  const limiteManana = sobrante / Math.max(diasParaPago - 1, 1)
+  const barColor = overBudget ? 'bg-red-500' : pctGastoHoy > 80 ? 'bg-amber-400' : 'bg-emerald-500'
 
   async function handleAplicarFijos() {
     const activos = gastosFijos.filter(f => f.activo)
@@ -310,6 +326,66 @@ export function QuincenaCard({
               {ahorrosYaAplicados > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-400 inline-block" /> Ahorrado</span>}
               {sobrante > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-300 inline-block" /> Sobrante</span>}
             </div>
+          </div>
+        )}
+
+        {/* Presupuesto diario con barra de avance del gasto de hoy */}
+        {!cycle.overdue && sobrante > 0 && (
+          <div className={`rounded-xl border p-4 ${
+            overBudget
+              ? 'border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800/30'
+              : 'border-emerald-100 bg-emerald-50 dark:bg-emerald-900/10 dark:border-emerald-800/30'
+          }`}>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${
+                  overBudget ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'
+                }`}>
+                  <Wallet className={`h-5 w-5 ${overBudget ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    {overBudget ? 'Te pasaste hoy' : 'Disponible para hoy'}
+                  </p>
+                  <p className={`text-2xl font-bold leading-tight ${
+                    overBudget ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-300'
+                  }`}>
+                    {overBudget ? `−${formatHNL(excesoHoy)}` : formatHNL(restanteHoy)}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">{formatHNL(limiteDiario)}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500">límite del día</p>
+              </div>
+            </div>
+
+            {/* Barra de llenado del gasto de hoy */}
+            <div className="h-2.5 w-full rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${barColor}`}
+                style={{ width: `${fillPct}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1.5 text-xs text-gray-400 dark:text-slate-500">
+              <span>Gastado hoy: {formatHNL(gastoHoy)}</span>
+              <span>{Math.round(pctGastoHoy)}%</span>
+            </div>
+
+            {/* Nota inferior */}
+            {overBudget ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+                <CalendarClock className="h-3 w-3 shrink-0" />
+                {diasParaPago > 1
+                  ? `Usando el presupuesto de mañana — nuevo límite ~${formatHNL(limiteManana)}/día`
+                  : 'Es el último día del período: te pasaste del presupuesto disponible'}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-2 flex items-center gap-1">
+                <CalendarClock className="h-3 w-3 shrink-0" />
+                {formatHNL(sobrante)} disponible · {diasParaPago} día{diasParaPago !== 1 ? 's' : ''} hasta el próximo pago
+              </p>
+            )}
           </div>
         )}
 
