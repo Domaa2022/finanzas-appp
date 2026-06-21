@@ -1,0 +1,193 @@
+erDiagram
+    auth_users ||--|| profiles : "1:1"
+    profiles ||--o{ categories : tiene
+    profiles ||--o{ income_entries : tiene
+    profiles ||--o{ expenses : tiene
+    profiles ||--o{ savings_goals : tiene
+    profiles ||--o{ savings_allocations : tiene
+    profiles ||--o{ budgets : tiene
+    profiles ||--o{ fixed_expenses : tiene
+    profiles ||--o{ scheduled_savings : tiene
+    profiles ||--o{ subscriptions : tiene
+    profiles ||--o{ cash_entries : tiene
+    profiles ||--o{ cooperativa_cuentas : tiene
+    profiles ||--o{ cooperativa_movimientos : tiene
+
+    categories ||--o{ income_entries : clasifica
+    categories ||--o{ expenses : clasifica
+    categories ||--o{ budgets : limita
+    categories ||--o{ fixed_expenses : clasifica
+
+    income_entries ||--o{ savings_allocations : origina
+    savings_goals  ||--o{ savings_allocations : recibe
+    savings_goals  ||--o{ fixed_expenses : "fondo de"
+
+    income_entries ||--o{ cooperativa_movimientos : origina
+    cooperativa_cuentas ||--o{ cooperativa_movimientos : registra
+
+    auth_users ||--o{ deudas : tiene
+    auth_users ||--o{ deuda_pagos : tiene
+    deudas ||--o{ deuda_pagos : "se abona con"
+
+    auth_users {
+        uuid id PK
+    }
+
+    profiles {
+        uuid id PK "-> auth.users"
+        text nombre
+        text email
+        numeric default_savings_pct
+        text avatar_url
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    categories {
+        uuid id PK
+        uuid user_id FK
+        text nombre
+        text tipo "gasto|ingreso"
+        text icono
+        text color
+        boolean is_active
+    }
+
+    income_entries {
+        uuid id PK
+        uuid user_id FK
+        numeric monto
+        text fuente
+        text frecuencia "diario|quincenal|mensual"
+        date fecha
+        uuid category_id FK
+        text ahorro_tipo
+        numeric ahorro_valor
+        boolean es_quincena_actual
+        text notas
+    }
+
+    expenses {
+        uuid id PK
+        uuid user_id FK
+        numeric monto
+        uuid category_id FK
+        text descripcion
+        date fecha
+        text notas
+    }
+
+    savings_goals {
+        uuid id PK
+        uuid user_id FK
+        text nombre
+        numeric monto_objetivo
+        numeric monto_actual
+        date fecha_limite
+        int prioridad
+        text estado "activa|completada|pausada"
+        boolean es_general
+        boolean es_gasto_fijo
+    }
+
+    savings_allocations {
+        uuid id PK
+        uuid user_id FK
+        uuid income_entry_id FK "nullable"
+        uuid savings_goal_id FK
+        numeric monto
+        date fecha
+        text notas
+    }
+
+    budgets {
+        uuid id PK
+        uuid user_id FK
+        uuid category_id FK
+        numeric limite_mensual
+        int mes
+        int anio
+    }
+
+    fixed_expenses {
+        uuid id PK
+        uuid user_id FK
+        text nombre
+        numeric monto
+        uuid category_id FK "nullable"
+        boolean activo
+        text frecuencia "quincenal|mensual"
+        int dia_pago
+        uuid savings_goal_id FK "nullable"
+    }
+
+    scheduled_savings {
+        uuid id PK
+        uuid user_id FK
+        text nombre
+        text tipo "porcentaje|fijo"
+        numeric valor
+        boolean activo
+    }
+
+    subscriptions {
+        uuid id PK
+        uuid user_id FK
+        text nombre
+        numeric monto
+        text frecuencia
+        date fecha_renovacion
+        text categoria
+        text estado
+        text color
+    }
+
+    cash_entries {
+        uuid id PK
+        uuid user_id FK
+        text tipo "entrada|salida"
+        numeric monto
+        text descripcion
+        date fecha
+        text notas
+    }
+
+    deudas {
+        uuid id PK
+        uuid user_id FK "-> auth.users"
+        text tipo "deuda|prestamo"
+        text nombre_persona
+        numeric monto_total
+        numeric monto_pagado
+        date fecha_inicio
+        date fecha_vencimiento
+        text estado
+    }
+
+    deuda_pagos {
+        uuid id PK
+        uuid user_id FK "-> auth.users"
+        uuid deuda_id FK
+        numeric monto
+        date fecha
+        text notas
+    }
+
+    cooperativa_cuentas {
+        uuid id PK
+        uuid user_id FK
+        text tipo "aportaciones|retirable"
+        numeric saldo
+        date ultima_aplicacion_intereses
+    }
+
+    cooperativa_movimientos {
+        uuid id PK
+        uuid user_id FK
+        uuid cuenta_id FK
+        text tipo
+        numeric monto
+        date fecha
+        uuid income_entry_id FK "nullable"
+        text mes_aplicado
+    }
