@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getCurrentMonth, getMonthRange, proximoDiaPago, diasRestantes } from '@/lib/utils/dates'
+import { getCurrentMonth, getMonthRange, proximoDiaPago, diasRestantes, todayISO } from '@/lib/utils/dates'
 import { RecentTransaction } from '@/lib/types/database'
 import DashboardClientPage from './DashboardClientPage'
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
 
   if (ultimoIngreso) {
     const inicioQuincena = ultimoIngreso.fecha
-    const hoy = format(new Date(), 'yyyy-MM-dd')
+    const hoy = todayISO()
 
     // Gastos desde el último ingreso
     const gastosQuincena = expenses

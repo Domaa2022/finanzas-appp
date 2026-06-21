@@ -37,8 +37,7 @@ const FRECUENCIA_LABEL: Record<string, string> = {
 function getCycleInfo(fechaIngreso: string, frecuencia: string) {
   const cycleDays = CYCLE_DAYS[frecuencia] ?? 15
   const start = new Date(fechaIngreso + 'T12:00:00')
-  const today = new Date()
-  today.setHours(12, 0, 0, 0)
+  const today = new Date(todayISO() + 'T12:00:00')
   const elapsed = Math.max(differenceInDays(today, start), 0)
   const remaining = cycleDays - elapsed
   const pct = Math.min(Math.max((elapsed / cycleDays) * 100, 0), 100)
