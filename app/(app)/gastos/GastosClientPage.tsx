@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { Plus, Search, X, ArrowUpDown, ChevronDown, CalendarRange } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { Expense, Category } from '@/lib/types/database'
 import { ExpenseForm } from '@/components/gastos/ExpenseForm'
 import { ExpenseList } from '@/components/gastos/ExpenseList'
@@ -10,6 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { formatHNL } from '@/lib/utils/currency'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -58,7 +58,6 @@ interface Props {
 }
 
 export default function GastosClientPage({ initialExpenses, categories }: Props) {
-  const router = useRouter()
   const [modalOpen, setModalOpen] = useState(false)
   const [busqueda, setBusqueda] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
@@ -68,21 +67,47 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
   const [orden, setOrden] = useState<Orden>('fecha_desc')
   const [ordenMenuOpen, setOrdenMenuOpen] = useState(false)
 
+  // La carga inicial del servidor solo trae "Este mes" (el filtro por
+  // defecto). Cuando el usuario pide un período distinto, se consulta ese
+  // rango directamente a Supabase en vez de mandar siempre todo el
+  // historial de gastos desde el servidor.
+  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses)
+  const [loading, setLoading] = useState(false)
+  const didMount = useRef(false)
+
+  const fetchExpenses = useCallback(async (periodo: Periodo, desde: string, hasta: string) => {
+    const supabase = createClient()
+    let query = supabase.from('expenses').select('*, categories(*)').order('fecha', { ascending: false })
+    const startDate = periodo === 'custom' ? (desde || null) : getStartDate(periodo)
+    const endDate = periodo === 'custom' ? (hasta || null) : null
+    if (startDate) query = query.gte('fecha', startDate)
+    if (endDate) query = query.lte('fecha', endDate)
+
+    setLoading(true)
+    const { data } = await query
+    setExpenses(data || [])
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true
+      return
+    }
+    fetchExpenses(filtroPeriodo, customDesde, customHasta)
+  }, [filtroPeriodo, customDesde, customHasta, fetchExpenses])
+
   const handleSuccess = useCallback(() => {
     setModalOpen(false)
-    router.refresh()
-  }, [router])
+    fetchExpenses(filtroPeriodo, customDesde, customHasta)
+  }, [fetchExpenses, filtroPeriodo, customDesde, customHasta])
 
   const gastosCategories = categories.filter(c => c.tipo === 'gasto')
 
   const filtered = useMemo(() => {
-    const startDate = filtroPeriodo === 'custom' ? (customDesde || null) : getStartDate(filtroPeriodo)
-    const endDate = filtroPeriodo === 'custom' ? (customHasta || null) : null
     const q = busqueda.toLowerCase().trim()
 
-    let result = initialExpenses.filter(e => {
-      if (startDate && e.fecha < startDate) return false
-      if (endDate && e.fecha > endDate) return false
+    let result = expenses.filter(e => {
       if (filtroCategoria && e.category_id !== filtroCategoria) return false
       if (q && !e.descripcion?.toLowerCase().includes(q) && !e.notas?.toLowerCase().includes(q)) return false
       return true
@@ -97,7 +122,7 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
     })
 
     return result
-  }, [initialExpenses, busqueda, filtroCategoria, filtroPeriodo, customDesde, customHasta, orden])
+  }, [expenses, busqueda, filtroCategoria, orden])
 
   const totalFiltrado = filtered.reduce((s, e) => s + e.monto, 0)
   const hayFiltros = busqueda !== '' || filtroCategoria !== '' || filtroPeriodo !== 'mes'
@@ -128,8 +153,14 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Gastos</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-            {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} ·{' '}
-            <span className="font-medium text-red-500">{formatHNL(totalFiltrado)}</span>
+            {loading ? (
+              'Cargando…'
+            ) : (
+              <>
+                {filtered.length} resultado{filtered.length !== 1 ? 's' : ''} ·{' '}
+                <span className="font-medium text-red-500">{formatHNL(totalFiltrado)}</span>
+              </>
+            )}
           </p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
@@ -292,7 +323,7 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
       {/* Lista */}
       <Card padding="none">
         <div className="px-6 py-4">
-          <ExpenseList items={filtered} onDeleted={() => router.refresh()} />
+          <ExpenseList items={filtered} onDeleted={() => fetchExpenses(filtroPeriodo, customDesde, customHasta)} />
         </div>
       </Card>
 

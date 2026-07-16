@@ -15,21 +15,30 @@ export default async function DashboardPage() {
   const { mes, anio } = getCurrentMonth()
   const { start, end } = getMonthRange(mes, anio)
 
-  const [incomesRes, expensesRes, allocationsRes, goalsRes, fixedRes, scheduledRes, cashRes] = await Promise.all([
+  // Ventana de datos: cubre el gráfico de 6 meses, el mes actual y la
+  // detección de quincena. Los totales "de siempre" (saldo total, etc.) se
+  // calculan aparte con una suma hecha en la base de datos (ver RPC abajo),
+  // así no hace falta traer TODO el historial de transacciones en cada carga.
+  const windowStart = format(startOfMonth(subMonths(new Date(anio, mes - 1, 1), 5)), 'yyyy-MM-dd')
+
+  const [incomesRes, expensesRes, allocationsRes, goalsRes, fixedRes, scheduledRes, totalesRes] = await Promise.all([
     supabase
       .from('income_entries')
       .select('id, monto, fecha, fuente, frecuencia, es_quincena_actual, categories(nombre, color)')
       .eq('user_id', user.id)
+      .or(`fecha.gte.${windowStart},es_quincena_actual.eq.true`)
       .order('fecha', { ascending: false }),
     supabase
       .from('expenses')
       .select('monto, fecha, descripcion, notas, categories(nombre, color)')
       .eq('user_id', user.id)
+      .gte('fecha', windowStart)
       .order('fecha', { ascending: false }),
     supabase
       .from('savings_allocations')
       .select('monto, fecha, income_entry_id')
-      .eq('user_id', user.id),
+      .eq('user_id', user.id)
+      .gte('fecha', windowStart),
     supabase
       .from('savings_goals')
       .select('*')
@@ -46,10 +55,7 @@ export default async function DashboardPage() {
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true }),
-    supabase
-      .from('cash_entries')
-      .select('tipo, monto')
-      .eq('user_id', user.id),
+    supabase.rpc('get_dashboard_totales', { p_user_id: user.id }),
   ])
 
   const incomes = incomesRes.data || []
@@ -60,11 +66,8 @@ export default async function DashboardPage() {
   const goals = goalsRes.data || []
   const gastosFijos = fixedRes.data || []
   const ahorrosProgramados = scheduledRes.data || []
-  const cashEntries = cashRes.data || []
-  const cashBalance = cashEntries.reduce(
-    (sum: number, e: any) => sum + (e.tipo === 'entrada' ? e.monto : -e.monto),
-    0,
-  )
+  const totales = totalesRes.data?.[0] ?? { total_ingresos: 0, total_gastos: 0, total_ahorros: 0, cash_balance: 0 }
+  const cashBalance = totales.cash_balance
 
   // --- Quincena actual ---
   // Prioriza el ingreso fijado; si no hay ninguno, usa el más reciente
@@ -153,12 +156,8 @@ export default async function DashboardPage() {
     }
   }
 
-  // --- Totales generales ---
-  const totalIngresos = incomes.reduce((s, i) => s + i.monto, 0)
-  const totalGastos = expenses.reduce((s, e) => s + e.monto, 0)
-  const totalAhorros = allocations.reduce((s, a) => s + a.monto, 0)
-
-  const saldoTotal = parseFloat((totalIngresos - totalGastos - totalAhorros).toFixed(2))
+  // --- Totales generales (calculados en la BD, no sumando el historial en JS) ---
+  const saldoTotal = parseFloat((totales.total_ingresos - totales.total_gastos - totales.total_ahorros).toFixed(2))
 
   // --- Este mes ---
   const ingresosMes = incomes.filter(i => i.fecha >= start && i.fecha <= end).reduce((s, i) => s + i.monto, 0)
