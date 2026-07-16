@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import { Plus, Search, X, ArrowUpDown, ChevronDown, CalendarRange } from 'lucide-react'
+import { Plus, Search, X, ArrowUpDown, ChevronDown, CalendarRange, Camera } from 'lucide-react'
 import { Expense, Category } from '@/lib/types/database'
 import { ExpenseForm } from '@/components/gastos/ExpenseForm'
 import { ExpenseList } from '@/components/gastos/ExpenseList'
+import { GastoDesdeCaptura } from '@/components/gastos/GastoDesdeCaptura'
 import { Modal } from '@/components/ui/Modal'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -59,6 +60,7 @@ interface Props {
 
 export default function GastosClientPage({ initialExpenses, categories }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [modalCapturaOpen, setModalCapturaOpen] = useState(false)
   const [busqueda, setBusqueda] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [filtroPeriodo, setFiltroPeriodo] = useState<Periodo>('mes')
@@ -99,6 +101,11 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
 
   const handleSuccess = useCallback(() => {
     setModalOpen(false)
+    fetchExpenses(filtroPeriodo, customDesde, customHasta)
+  }, [fetchExpenses, filtroPeriodo, customDesde, customHasta])
+
+  const handleSuccessCaptura = useCallback(() => {
+    setModalCapturaOpen(false)
     fetchExpenses(filtroPeriodo, customDesde, customHasta)
   }, [fetchExpenses, filtroPeriodo, customDesde, customHasta])
 
@@ -163,10 +170,16 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
             )}
           </p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Registrar gasto
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => setModalCapturaOpen(true)}>
+            <Camera className="h-4 w-4" />
+            Desde captura
+          </Button>
+          <Button onClick={() => setModalOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Registrar gasto
+          </Button>
+        </div>
       </div>
 
       {/* ── Panel de filtros ── */}
@@ -332,6 +345,14 @@ export default function GastosClientPage({ initialExpenses, categories }: Props)
           categories={categories}
           onSuccess={handleSuccess}
           onCancel={() => setModalOpen(false)}
+        />
+      </Modal>
+
+      <Modal open={modalCapturaOpen} onClose={() => setModalCapturaOpen(false)} title="Registrar gasto desde captura">
+        <GastoDesdeCaptura
+          categories={categories}
+          onSuccess={handleSuccessCaptura}
+          onCancel={() => setModalCapturaOpen(false)}
         />
       </Modal>
     </div>
