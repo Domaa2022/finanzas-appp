@@ -8,10 +8,14 @@ export default async function GastosFijosPage() {
   if (!user) redirect('/login')
 
   const [fixedRes, categoriesRes] = await Promise.all([
+    // Solo quincenales: se cobran directo con cada quincena, sin fondo. Todo lo
+    // que aparta dinero (mensual, anual, variable, …) se administra en
+    // /suscripciones.
     supabase
       .from('fixed_expenses')
-      .select('*, categories(*), fondo:savings_goals!fixed_expenses_savings_goal_id_fkey(id, monto_actual, monto_objetivo)')
+      .select('*, categories(*)')
       .eq('user_id', user.id)
+      .eq('frecuencia', 'quincenal')
       .order('created_at', { ascending: true }),
     supabase
       .from('categories')

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getCurrentMonth, getMonthRange, proximoDiaPago, diasRestantes, todayISO } from '@/lib/utils/dates'
+import { getCurrentMonth, getMonthRange, proximoDiaPago, diasRestantes, todayISO, todayInAppTZ, saludoDelDia } from '@/lib/utils/dates'
 import { RecentTransaction } from '@/lib/types/database'
 import DashboardClientPage from './DashboardClientPage'
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
@@ -12,6 +12,25 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('nombre')
+    .eq('id', user.id)
+    .single()
+
+  const primerNombre = profile?.nombre?.split(' ')[0] ?? 'Usuario'
+  const saludo = `${saludoDelDia()}, ${primerNombre}`
+  const fechaHoyLabel = (() => {
+    const s = format(todayInAppTZ(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })
+    return s.charAt(0).toUpperCase() + s.slice(1)
+  })()
+
+  // Cobros vencidos (suscripciones y gastos fijos no quincenales): se pagan
+  // solos desde el fondo que se fue apartando cada quincena. Corre antes de
+  // leer los datos para que el dashboard muestre el estado ya cobrado.
+  // Es idempotente: cada pago avanza proximo_pago al siguiente ciclo.
+  await supabase.rpc('procesar_pagos_vencidos', { p_user_id: user.id })
+
   const { mes, anio } = getCurrentMonth()
   const { start, end } = getMonthRange(mes, anio)
 
@@ -21,7 +40,7 @@ export default async function DashboardPage() {
   // así no hace falta traer TODO el historial de transacciones en cada carga.
   const windowStart = format(startOfMonth(subMonths(new Date(anio, mes - 1, 1), 5)), 'yyyy-MM-dd')
 
-  const [incomesRes, expensesRes, allocationsRes, goalsRes, fixedRes, scheduledRes, totalesRes] = await Promise.all([
+  const [incomesRes, expensesRes, allocationsRes, goalsRes, fixedRes, scheduledRes, totalesRes, saldosRes] = await Promise.all([
     supabase
       .from('income_entries')
       .select('id, monto, fecha, fuente, frecuencia, es_quincena_actual, categories(nombre, color)')
@@ -56,6 +75,7 @@ export default async function DashboardPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: true }),
     supabase.rpc('get_dashboard_totales', { p_user_id: user.id }),
+    supabase.rpc('get_saldos_cuentas', { p_user_id: user.id }),
   ])
 
   const incomes = incomesRes.data || []
@@ -66,8 +86,9 @@ export default async function DashboardPage() {
   const goals = goalsRes.data || []
   const gastosFijos = fixedRes.data || []
   const ahorrosProgramados = scheduledRes.data || []
-  const totales = totalesRes.data?.[0] ?? { total_ingresos: 0, total_gastos: 0, total_ahorros: 0, cash_balance: 0 }
+  const totales = totalesRes.data?.[0] ?? { total_ingresos: 0, total_gastos: 0, total_ahorros: 0, ahorros_apartados: 0, apartado_completadas: 0, cash_balance: 0, saldo_disponible: 0 }
   const cashBalance = totales.cash_balance
+  const saldosCuentas = saldosRes.data || []
 
   // --- Quincena actual ---
   // Prioriza el ingreso fijado; si no hay ninguno, usa el más reciente
@@ -157,7 +178,14 @@ export default async function DashboardPage() {
   }
 
   // --- Totales generales (calculados en la BD, no sumando el historial en JS) ---
-  const saldoTotal = parseFloat((totales.total_ingresos - totales.total_gastos - totales.total_ahorros).toFixed(2))
+  // Saldo disponible = Σ cuentas líquidas − ahorros apartados (lo calcula
+  // get_dashboard_totales). Incluye el efectivo, porque es una cuenta líquida.
+  // El fallback replica la fórmula vieja por si la RPC aún no trae el campo.
+  const saldoDisponible = parseFloat(
+    (totales.saldo_disponible
+      ?? (totales.total_ingresos - totales.total_gastos - totales.ahorros_apartados - totales.apartado_completadas + totales.cash_balance)
+    ).toFixed(2)
+  )
 
   // --- Este mes ---
   const ingresosMes = incomes.filter(i => i.fecha >= start && i.fecha <= end).reduce((s, i) => s + i.monto, 0)
@@ -202,12 +230,15 @@ export default async function DashboardPage() {
     }
   })
 
-  // --- Pagos mensuales (gastos fijos con ahorro) ---
+  // --- Próximos pagos (gastos fijos no quincenales y suscripciones) ---
+  // Todos comparten el mismo mecanismo: se aparta cada quincena hacia un fondo
+  // y al llegar proximo_pago se cobran de ahí. Los `variable` no tienen fecha,
+  // así que aparecen sin cuenta regresiva.
   const pagosMensuales = gastosFijos
-    .filter((f: any) => f.frecuencia === 'mensual' && f.activo)
+    .filter((f: any) => f.frecuencia !== 'quincenal' && f.activo)
     .map((f: any) => {
       const apartado = f.fondo?.monto_actual ?? 0
-      const fechaPago = f.dia_pago ? proximoDiaPago(f.dia_pago) : null
+      const fechaPago = f.proximo_pago ?? (f.dia_pago ? proximoDiaPago(f.dia_pago) : null)
       return {
         id: f.id,
         nombre: f.nombre,
@@ -217,7 +248,7 @@ export default async function DashboardPage() {
         pct: f.monto > 0 ? Math.round((apartado / f.monto) * 100) : 0,
         fechaPago,
         dias: fechaPago ? diasRestantes(fechaPago) : null,
-        color: f.categories?.color ?? null,
+        color: f.color ?? f.categories?.color ?? null,
       }
     })
     .sort((a, b) => {
@@ -228,8 +259,10 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClientPage
+      saludo={saludo}
+      fechaHoyLabel={fechaHoyLabel}
       pagosMensuales={pagosMensuales}
-      saldoTotal={saldoTotal}
+      saldoDisponible={saldoDisponible}
       ingresosMes={ingresosMes}
       gastosMes={gastosMes}
       ahorroMes={ahorroMes}
@@ -240,6 +273,9 @@ export default async function DashboardPage() {
       chartData={chartData}
       quincenaData={quincenaData}
       cashBalance={cashBalance}
+      saldosCuentas={saldosCuentas}
+      ahorrosApartados={Number(totales.ahorros_apartados ?? 0)}
+      apartadoCompletadas={Number(totales.apartado_completadas ?? 0)}
     />
   )
 }

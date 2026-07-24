@@ -3,16 +3,27 @@
 /* Class-based dark mode using data attribute — completely independent from OS preference */
 @variant dark ([data-theme="dark"] &);
 
+@theme inline {
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, 'SFMono-Regular', monospace;
+}
+
 body {
-  background-color: #F9FAFB;
+  background-color: #F5F8FC;
   color: #111827;
+  font-family: var(--font-sans);
 }
 
 [data-theme="dark"] body {
-  background-color: #0F172A;
+  background-color: #0F1420;
   color: #F1F5F9;
 }
 
 * {
   box-sizing: border-box;
+}
+
+.font-mono-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }

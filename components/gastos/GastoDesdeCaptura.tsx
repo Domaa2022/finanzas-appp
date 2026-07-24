@@ -1,10 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Camera, Upload, Trash2, CheckCircle2, Circle, ImageOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { Category } from '@/lib/types/database'
+import { useCuentas } from '@/lib/cuentas/useCuentas'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -47,9 +48,16 @@ export function GastoDesdeCaptura({ categories, onSuccess, onCancel }: Props) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [gastos, setGastos] = useState<GastoDetectado[] | null>(null)
+  const [cuentaId, setCuentaId] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const gastosCategories = categories.filter(c => c.tipo === 'gasto')
+  const { cuentas, principal } = useCuentas()
+
+  // Todo el lote se registra contra una sola cuenta; por defecto la principal.
+  useEffect(() => {
+    if (!cuentaId && principal) setCuentaId(principal.id)
+  }, [principal, cuentaId])
 
   async function handleFile(file: File) {
     const dataUrl = await fileToDataUrl(file)
@@ -104,6 +112,10 @@ export function GastoDesdeCaptura({ categories, onSuccess, onCancel }: Props) {
       toast.error('Revisa los gastos: falta monto, categoría o fecha en alguno')
       return
     }
+    if (!cuentaId) {
+      toast.error('Selecciona la cuenta de la que salen los gastos')
+      return
+    }
 
     setSaving(true)
     const supabase = createClient()
@@ -118,6 +130,7 @@ export function GastoDesdeCaptura({ categories, onSuccess, onCancel }: Props) {
         user_id: user.id,
         monto: parseFloat(g.monto),
         category_id: g.category_id,
+        cuenta_id: cuentaId,
         descripcion: g.descripcion || 'Gasto',
         fecha: g.fecha,
         notas: null,
@@ -145,6 +158,14 @@ export function GastoDesdeCaptura({ categories, onSuccess, onCancel }: Props) {
           </div>
         ) : (
           <>
+            <Select
+              label="Cuenta de la que salen"
+              placeholder="Seleccionar..."
+              options={cuentas.map(c => ({ value: c.id, label: c.nombre }))}
+              value={cuentaId}
+              onChange={e => setCuentaId(e.target.value)}
+            />
+
             <div className="flex items-center gap-3">
               {preview && (
                 // eslint-disable-next-line @next/next/no-img-element

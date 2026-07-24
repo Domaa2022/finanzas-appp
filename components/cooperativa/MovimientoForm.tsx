@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { CooperativaCuenta } from '@/lib/types/database'
+import { useCuentas } from '@/lib/cuentas/useCuentas'
 import { todayISO } from '@/lib/utils/dates'
 import { formatHNL } from '@/lib/utils/currency'
 import { nombreCuenta } from '@/lib/cooperativa/interes'
@@ -18,8 +19,14 @@ const schema = z.object({
   tipo: z.enum(['deposito', 'retiro', 'ajuste']),
   monto: z.string().min(1, 'Requerido').refine(v => parseFloat(v) > 0, 'Debe ser mayor a 0'),
   fecha: z.string().min(1, 'Requerido'),
+  cuenta_bancaria_id: z.string().optional(),
   descripcion: z.string().optional(),
-})
+}).refine(
+  // Depósitos y retiros mueven plata real: hay que saber de qué cuenta sale o
+  // a cuál entra. El ajuste es solo una corrección contable.
+  d => d.tipo === 'ajuste' || !!d.cuenta_bancaria_id,
+  { path: ['cuenta_bancaria_id'], message: 'Selecciona la cuenta' },
+)
 
 type FormData = z.infer<typeof schema>
 
@@ -31,12 +38,19 @@ interface Props {
 
 export function MovimientoForm({ cuenta, onSuccess, onCancel }: Props) {
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
+  const { cuentas, principal } = useCuentas()
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { tipo: 'deposito', monto: '', fecha: todayISO(), descripcion: '' },
+    defaultValues: { tipo: 'deposito', monto: '', fecha: todayISO(), descripcion: '', cuenta_bancaria_id: '' },
   })
 
   const tipo = watch('tipo')
+  const cuentaBancariaId = watch('cuenta_bancaria_id')
+  const esAjuste = tipo === 'ajuste'
+
+  useEffect(() => {
+    if (!cuentaBancariaId && principal) setValue('cuenta_bancaria_id', principal.id)
+  }, [principal, cuentaBancariaId, setValue])
 
   async function onSubmit(data: FormData) {
     const monto = parseFloat(data.monto)
@@ -71,13 +85,16 @@ export function MovimientoForm({ cuenta, onSuccess, onCancel }: Props) {
       }
     }
 
-    const { error } = await supabase.from('cooperativa_movimientos').insert({
-      user_id: user.id,
-      cuenta_id: cuenta.id,
-      tipo: data.tipo,
-      monto: finalMonto,
-      fecha: data.fecha,
-      descripcion: finalDescripcion,
+    // Vía RPC para que valide la contrapartida bancaria y el dinero salga (o
+    // entre) de verdad en la cuenta elegida.
+    const { error } = await supabase.rpc('cooperativa_registrar_movimiento', {
+      p_user_id: user.id,
+      p_cuenta_id: cuenta.id,
+      p_tipo: data.tipo,
+      p_monto: finalMonto,
+      p_fecha: data.fecha,
+      p_descripcion: finalDescripcion,
+      p_cuenta_bancaria_id: data.tipo === 'ajuste' ? null : (data.cuenta_bancaria_id || null),
     })
 
     if (error) {
@@ -125,9 +142,26 @@ export function MovimientoForm({ cuenta, onSuccess, onCancel }: Props) {
         />
       </div>
 
+      {!esAjuste && (
+        <div>
+          <Select
+            label={tipo === 'retiro' ? 'Cuenta donde entra el dinero' : 'Cuenta de la que sale el dinero'}
+            placeholder="Seleccionar..."
+            options={cuentas.map(c => ({ value: c.id, label: c.nombre }))}
+            error={errors.cuenta_bancaria_id?.message}
+            {...register('cuenta_bancaria_id')}
+          />
+          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+            {tipo === 'retiro'
+              ? 'El saldo de esa cuenta subirá por este monto.'
+              : 'El saldo de esa cuenta bajará por este monto.'}
+          </p>
+        </div>
+      )}
+
       <Input
         label="Descripción (opcional)"
-        placeholder={tipo === 'ajuste' ? 'Saldo real al consultar la cooperativa' : 'Ej: depósito en ventanilla'}
+        placeholder={esAjuste ? 'Saldo real al consultar la cooperativa' : 'Ej: depósito en ventanilla'}
         {...register('descripcion')}
       />
 

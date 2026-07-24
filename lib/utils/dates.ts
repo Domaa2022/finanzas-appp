@@ -19,6 +19,17 @@ export function formatDate(date: string | Date): string {
   return format(d, 'dd MMM yyyy', { locale: es })
 }
 
+/** Saludo según la hora actual en la zona de la app (no la del servidor). */
+export function saludoDelDia(): string {
+  const hora = parseInt(
+    new Intl.DateTimeFormat('en-US', { timeZone: APP_TIMEZONE, hour: '2-digit', hour12: false }).format(new Date()),
+    10
+  )
+  if (hora < 12) return 'Buenos días'
+  if (hora < 19) return 'Buenas tardes'
+  return 'Buenas noches'
+}
+
 export function formatMonth(mes: number, anio: number): string {
   const date = new Date(anio, mes - 1, 1)
   return format(date, 'MMMM yyyy', { locale: es })

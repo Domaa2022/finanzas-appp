@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import {
-  PiggyBank, TrendingDown, TrendingUp,
-  ReceiptText, ExternalLink, Sparkles, CalendarClock,
-  Clock, ChevronDown, ChevronUp, Pin, Wallet,
+  PiggyBank, ReceiptText, ExternalLink, Sparkles,
+  Clock, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { differenceInDays, addDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -25,13 +24,6 @@ const CYCLE_DAYS: Record<string, number> = {
   semanal: 7,
   quincenal: 15,
   mensual: 30,
-}
-
-const FRECUENCIA_LABEL: Record<string, string> = {
-  diario: 'Diario',
-  semanal: 'Semanal',
-  quincenal: 'Quincenal',
-  mensual: 'Mensual',
 }
 
 function getCycleInfo(fechaIngreso: string, frecuencia: string) {
@@ -87,6 +79,7 @@ export function QuincenaCard({
   const [loadingFijos, setLoadingFijos] = useState(false)
   const [modalDistribuirOpen, setModalDistribuirOpen] = useState(false)
   const [ritmoExpanded, setRitmoExpanded] = useState(false)
+  const [detallesExpanded, setDetallesExpanded] = useState(false)
 
   const totalFijos = gastosFijos.filter(f => f.activo).reduce((s, f) => s + f.monto, 0)
   const totalProgramado = ahorrosProgramados
@@ -100,11 +93,6 @@ export function QuincenaCard({
 
   const sobrante = ultimoIngresoMonto - gastosDesdeIngreso - ahorrosYaAplicados
   const cycle = getCycleInfo(ultimoIngresoFecha, ultimoIngresoFrecuencia)
-
-  const cycleBarColor =
-    cycle.overdue ? 'bg-gray-300 dark:bg-slate-600' :
-    cycle.pct > 80 ? 'bg-amber-400' :
-    'bg-emerald-400'
 
   const gastoDiario = cycle.elapsed > 0 ? Math.round(gastosDesdeIngreso / cycle.elapsed) : 0
   const proyeccionGasto = gastoDiario * cycle.cycleDays
@@ -122,7 +110,8 @@ export function QuincenaCard({
   const pctGastoHoy = limiteDiario > 0 ? (gastoHoy / limiteDiario) * 100 : 0
   const fillPct = Math.min(pctGastoHoy, 100)
   const limiteManana = sobrante / Math.max(diasParaPago - 1, 1)
-  const barColor = overBudget ? 'bg-red-500' : pctGastoHoy > 80 ? 'bg-amber-400' : 'bg-emerald-500'
+  const showDonut = !cycle.overdue && sobrante > 0
+  const DONUT_CIRCUMFERENCE = 263.89
 
   async function handleAplicarFijos() {
     const activos = gastosFijos.filter(f => f.activo)
@@ -170,199 +159,127 @@ export function QuincenaCard({
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
+    <div className="flex flex-col gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${showDonut ? 'lg:grid-cols-3' : ''}`}>
 
-      {/* ── Encabezado + progreso del ciclo ── */}
-      <div className="px-5 pt-4 pb-3 border-b border-gray-50 dark:border-slate-700/60">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Período actual</h2>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                {FRECUENCIA_LABEL[ultimoIngresoFrecuencia] ?? ultimoIngresoFrecuencia}
-              </span>
+        {/* ── Encabezado + progreso del ciclo ── */}
+        <div className={`relative overflow-hidden rounded-2xl px-5 pt-4 pb-4 bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-sm ${showDonut ? 'lg:col-span-2' : ''}`}>
+          <div className="absolute -right-10 -top-14 h-48 w-48 rounded-full bg-white/10" />
+          <div className="relative flex items-start justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-100">Ciclo de quincena actual</p>
+              <h2 className="text-lg font-bold mt-0.5" title={ultimoIngresoFuente}>
+                {format(new Date(ultimoIngresoFecha + 'T12:00:00'), "d MMM", { locale: es })} → {format(cycle.nextPayment, "d MMM", { locale: es })}
+              </h2>
             </div>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
-              <Pin className="h-3 w-3" />
-              {ultimoIngresoFuente} · {format(new Date(ultimoIngresoFecha + 'T12:00:00'), "d MMM", { locale: es })}
-            </p>
-          </div>
 
-          <div className="text-right shrink-0">
-            {cycle.overdue ? (
-              <p className="text-xs font-medium text-gray-400 dark:text-slate-500">Ciclo cerrado</p>
-            ) : (
-              <>
-                <p className="text-sm font-bold text-gray-700 dark:text-slate-200">
-                  Día {cycle.elapsed + 1}
-                  <span className="text-xs font-normal text-gray-400 dark:text-slate-500"> / {cycle.cycleDays}</span>
-                </p>
-                <p className="text-xs text-gray-400 dark:text-slate-500">
-                  {cycle.remaining <= 0
-                    ? 'Último día'
-                    : `${cycle.remaining} día${cycle.remaining !== 1 ? 's' : ''} restante${cycle.remaining !== 1 ? 's' : ''}`}
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Barra de progreso del ciclo */}
-        <div className="flex flex-col gap-1.5">
-          <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${cycleBarColor}`}
-              style={{ width: `${cycle.pct}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-gray-300 dark:text-slate-600">
-            <span>{format(new Date(ultimoIngresoFecha + 'T12:00:00'), "d MMM", { locale: es })}</span>
-            {!cycle.overdue && (
-              <span className="flex items-center gap-1 text-gray-400 dark:text-slate-500">
-                <CalendarClock className="h-3 w-3" />
-                Próximo ~{format(cycle.nextPayment, "d MMM", { locale: es })}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Cuerpo ── */}
-      <div className="px-5 py-4 flex flex-col gap-4">
-
-        {/* Números */}
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
-              <TrendingUp className="h-3 w-3 text-emerald-500" />
-              Recibido
-            </div>
-            <p className="font-bold text-emerald-600 text-sm sm:text-base">{formatHNL(ultimoIngresoMonto)}</p>
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
-              <TrendingDown className="h-3 w-3 text-red-500" />
-              Gastado
-            </div>
-            <p className="font-bold text-red-500 text-sm sm:text-base">{formatHNL(gastosDesdeIngreso)}</p>
-            {ultimoIngresoMonto > 0 && (
-              <p className="text-xs text-gray-300 dark:text-slate-600">
-                {Math.round((gastosDesdeIngreso / ultimoIngresoMonto) * 100)}%
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
-              <PiggyBank className="h-3 w-3 text-blue-500" />
-              Ahorrado
-            </div>
-            <p className="font-bold text-blue-600 text-sm sm:text-base">{formatHNL(ahorrosYaAplicados)}</p>
-            {ultimoIngresoMonto > 0 && (
-              <p className="text-xs text-gray-300 dark:text-slate-600">
-                {Math.round((ahorrosYaAplicados / ultimoIngresoMonto) * 100)}%
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
-              <Sparkles className="h-3 w-3 text-violet-500" />
-              Sobrante
-            </div>
-            <p className={`font-bold text-sm sm:text-base ${sobrante > 0 ? 'text-violet-600' : 'text-gray-400 dark:text-slate-500'}`}>
-              {formatHNL(Math.max(sobrante, 0))}
-            </p>
-          </div>
-        </div>
-
-        {/* Barra de distribución */}
-        {ultimoIngresoMonto > 0 && (
-          <div>
-            <div className="h-2.5 w-full rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden flex">
-              <div
-                className="h-full bg-red-400 transition-all"
-                style={{ width: `${Math.min((gastosDesdeIngreso / ultimoIngresoMonto) * 100, 100)}%` }}
-              />
-              <div
-                className="h-full bg-blue-400 transition-all"
-                style={{ width: `${Math.min((ahorrosYaAplicados / ultimoIngresoMonto) * 100, 100 - (gastosDesdeIngreso / ultimoIngresoMonto) * 100)}%` }}
-              />
-              {sobrante > 0 && (
-                <div
-                  className="h-full bg-violet-300 transition-all"
-                  style={{ width: `${(sobrante / ultimoIngresoMonto) * 100}%` }}
-                />
+            <div className="text-right shrink-0">
+              {cycle.overdue ? (
+                <p className="text-xs font-medium text-indigo-100">Ciclo cerrado</p>
+              ) : (
+                <>
+                  <p className="text-sm font-bold font-mono-nums">
+                    Día {cycle.elapsed + 1}
+                    <span className="text-xs font-normal text-indigo-100"> / {cycle.cycleDays}</span>
+                  </p>
+                  <p className="text-xs text-indigo-100">
+                    {cycle.remaining <= 0
+                      ? 'Último día'
+                      : `${cycle.remaining} día${cycle.remaining !== 1 ? 's' : ''} restante${cycle.remaining !== 1 ? 's' : ''}`}
+                  </p>
+                </>
               )}
             </div>
-            <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-gray-400 dark:text-slate-500">
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-400 inline-block" /> Gastos</span>
-              {ahorrosYaAplicados > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-400 inline-block" /> Ahorrado</span>}
-              {sobrante > 0 && <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-300 inline-block" /> Sobrante</span>}
-            </div>
           </div>
-        )}
 
-        {/* Presupuesto diario con barra de avance del gasto de hoy */}
-        {!cycle.overdue && sobrante > 0 && (
-          <div className={`rounded-xl border p-4 ${
-            overBudget
-              ? 'border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800/30'
-              : 'border-emerald-100 bg-emerald-50 dark:bg-emerald-900/10 dark:border-emerald-800/30'
-          }`}>
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${
-                  overBudget ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'
-                }`}>
-                  <Wallet className={`h-5 w-5 ${overBudget ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-slate-400">
-                    {overBudget ? 'Te pasaste hoy' : 'Disponible para hoy'}
-                  </p>
-                  <p className={`text-2xl font-bold leading-tight ${
-                    overBudget ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-300'
-                  }`}>
-                    {overBudget ? `−${formatHNL(excesoHoy)}` : formatHNL(restanteHoy)}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-semibold text-gray-700 dark:text-slate-200">{formatHNL(limiteDiario)}</p>
-                <p className="text-xs text-gray-400 dark:text-slate-500">límite del día</p>
-              </div>
-            </div>
-
-            {/* Barra de llenado del gasto de hoy */}
-            <div className="h-2.5 w-full rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
+          {/* Barra de progreso del ciclo */}
+          <div className="relative flex flex-col gap-1.5">
+            <div className="h-1.5 w-full rounded-full bg-white/25 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${barColor}`}
-                style={{ width: `${fillPct}%` }}
+                className="h-full rounded-full bg-white transition-all"
+                style={{ width: `${cycle.pct}%` }}
               />
             </div>
-            <div className="flex items-center justify-between mt-1.5 text-xs text-gray-400 dark:text-slate-500">
-              <span>Gastado hoy: {formatHNL(gastoHoy)}</span>
-              <span>{Math.round(pctGastoHoy)}%</span>
+            <div className="flex justify-between text-xs text-indigo-100">
+              <span>{Math.round(cycle.pct)}% del ciclo transcurrido</span>
+              {!cycle.overdue && <span>Se renueva el {format(cycle.nextPayment, "d MMM", { locale: es })}</span>}
             </div>
+          </div>
 
-            {/* Nota inferior */}
-            {overBudget ? (
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-                <CalendarClock className="h-3 w-3 shrink-0" />
-                {diasParaPago > 1
-                  ? `Usando el presupuesto de mañana — nuevo límite ~${formatHNL(limiteManana)}/día`
-                  : 'Es el último día del período: te pasaste del presupuesto disponible'}
-              </p>
-            ) : (
-              <p className="text-xs text-gray-400 dark:text-slate-500 mt-2 flex items-center gap-1">
-                <CalendarClock className="h-3 w-3 shrink-0" />
-                {formatHNL(sobrante)} disponible · {diasParaPago} día{diasParaPago !== 1 ? 's' : ''} hasta el próximo pago
+          {/* Ingreso / Gastado / Ahorrado / Sobrante ahorrable */}
+          <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-white/20">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-100">Ingreso</p>
+              <p className="text-sm sm:text-base font-bold font-mono-nums mt-0.5">{formatHNL(ultimoIngresoMonto)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-100">Gastado</p>
+              <p className="text-sm sm:text-base font-bold font-mono-nums mt-0.5">{formatHNL(gastosDesdeIngreso)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-100">Ahorrado</p>
+              <p className="text-sm sm:text-base font-bold font-mono-nums mt-0.5">{formatHNL(ahorrosYaAplicados)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-100">Sobrante ahorrable</p>
+              <p className="text-sm sm:text-base font-bold font-mono-nums mt-0.5">{formatHNL(Math.max(sobrante, 0))}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Presupuesto de hoy: dona morada ── */}
+        {showDonut && (
+          <div className="rounded-2xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-5 flex flex-col items-center justify-center text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500 mb-3 self-start">
+              Presupuesto de hoy
+            </p>
+            <div className="relative h-36 w-36">
+              <svg viewBox="0 0 120 120" className="h-36 w-36 -rotate-90">
+                <circle cx="60" cy="60" r="42" fill="none" stroke="currentColor" strokeWidth="10" className="text-gray-100 dark:text-slate-700" />
+                <circle
+                  cx="60" cy="60" r="42" fill="none" strokeWidth="10" strokeLinecap="round"
+                  stroke="currentColor"
+                  className={overBudget ? 'text-rose-500' : 'text-indigo-500'}
+                  strokeDasharray={`${(fillPct / 100) * DONUT_CIRCUMFERENCE} ${DONUT_CIRCUMFERENCE}`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-2">
+                <p className={`text-base font-bold font-mono-nums ${overBudget ? 'text-rose-500' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                  {overBudget ? `−${formatHNL(excesoHoy)}` : formatHNL(restanteHoy)}
+                </p>
+                {!overBudget && (
+                  <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 text-center leading-tight">
+                    disponible hoy
+                  </p>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
+              Límite: {formatHNL(limiteDiario)}/día
+            </p>
+            {overBudget && (
+              <p className="text-[11px] text-rose-500 mt-1">
+                {diasParaPago > 1 ? `Nuevo límite mañana ~${formatHNL(limiteManana)}` : 'Último día del período'}
               </p>
             )}
           </div>
         )}
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
+
+      {/* ── Ver más detalles ── */}
+      <button
+        onClick={() => setDetallesExpanded(v => !v)}
+        className="flex w-full items-center justify-center gap-1.5 px-5 py-2 text-xs font-medium text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+      >
+        {detallesExpanded ? 'Ocultar detalles del período' : 'Ver detalles del período'}
+        {detallesExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      </button>
+
+      {/* ── Cuerpo ── */}
+      {detallesExpanded && (
+      <div className="px-5 pb-4 pt-1 flex flex-col gap-4 border-t border-gray-50 dark:border-slate-700/60">
 
         {/* Ritmo de gasto (solo si hay días transcurridos y hay gastos) */}
         {cycle.elapsed > 0 && gastosDesdeIngreso > 0 && !cycle.overdue && (
@@ -463,7 +380,7 @@ export function QuincenaCard({
                   {gastosFijos.filter(f => f.activo).length} conceptos ·{' '}
                   {gastosFijosAplicados
                     ? <span className="text-emerald-700 dark:text-emerald-400 font-medium">Ya registrados</span>
-                    : <span>Pendientes</span>
+                    : <span>Pendientes de este período</span>
                   }
                 </p>
               </div>
@@ -504,6 +421,8 @@ export function QuincenaCard({
               : 'Sin sobrante disponible este período'}
           </div>
         )}
+      </div>
+      )}
       </div>
 
       {/* Modal distribución */}

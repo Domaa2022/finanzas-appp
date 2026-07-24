@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Trash2, Calendar, ChevronDown, ChevronUp, Pause, Play, Wallet, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Trash2, Calendar, ChevronDown, ChevronUp, Pause, Play, Wallet, ArrowRight, ArrowLeft, Check } from 'lucide-react'
+import { ActionMenu, ActionMenuItem } from '@/components/ui/ActionMenu'
 import { SavingsGoal, SavingsAllocation } from '@/lib/types/database'
 import { formatHNL } from '@/lib/utils/currency'
 import { formatDate, diasRestantes } from '@/lib/utils/dates'
@@ -15,6 +16,7 @@ import { Input } from '@/components/ui/Input'
 import { createClient } from '@/lib/supabase/client'
 import { TransferirDesdeGeneralModal } from '@/components/ahorros/TransferirDesdeGeneralModal'
 import { TransferirAQuincenaModal } from '@/components/ahorros/TransferirAQuincenaModal'
+import { UsarMetaModal } from '@/components/ahorros/UsarMetaModal'
 
 interface GoalCardProps {
   goal: SavingsGoal
@@ -36,12 +38,11 @@ const estadoLabel: Record<string, string> = {
 }
 
 export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [] }: GoalCardProps) {
-  console.log(goal)
-  console.log(allocations.reduce((s, i) => s + i.monto, 0))
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [modalTransferir, setModalTransferir] = useState(false)
   const [modalQuincena, setModalQuincena] = useState(false)
+  const [modalUsar, setModalUsar] = useState(false)
   const [modalEnviarGeneral, setModalEnviarGeneral] = useState(false)
   const [montoEnviar, setMontoEnviar] = useState('')
   const [loadingEnviar, setLoadingEnviar] = useState(false)
@@ -104,14 +105,13 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
               <p className="text-xs text-gray-500 dark:text-slate-400">Ahorro sin meta específica</p>
             </div>
           </div>
-          <button
-            onClick={handleDelete}
-            disabled={loading}
-            className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-            title="Eliminar fondo general"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <ActionMenu items={[{
+            label: 'Eliminar fondo general',
+            icon: <Trash2 className="h-4 w-4" />,
+            onClick: handleDelete,
+            danger: true,
+            disabled: loading,
+          }]} />
         </div>
 
         <div className="flex items-center justify-between">
@@ -185,6 +185,37 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
     )
   }
 
+  // Meta cumplida Y ya usada (fondo en cero): solo historial.
+  // Fila mínima, sin barra ni acciones — únicamente qué era y el botón de borrar.
+  // Ojo: una meta puede estar 'completada' con dinero adentro (el trigger la marca
+  // al alcanzar el objetivo), y esa NO va acá: todavía se puede usar.
+  if (goal.estado === 'completada' && goal.monto_actual <= 0.01) {
+    return (
+      <div className="flex items-center gap-3 py-2.5">
+        <div className="h-6 w-6 shrink-0 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+          <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <span className="flex-1 min-w-0 truncate text-sm text-gray-600 dark:text-slate-300">
+          {goal.nombre}
+        </span>
+        <span className="text-xs text-gray-400 dark:text-slate-500 shrink-0">
+          {formatDate(goal.updated_at)}
+        </span>
+        <span className="text-sm font-medium text-gray-500 dark:text-slate-400 shrink-0 tabular-nums">
+          {formatHNL(goal.monto_objetivo)}
+        </span>
+        <button
+          onClick={handleDelete}
+          disabled={loading}
+          className="p-1 text-gray-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors shrink-0"
+          title="Eliminar del historial"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    )
+  }
+
   // Tarjeta normal para metas regulares
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
@@ -206,24 +237,27 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {goal.estado !== 'completada' && (
-            <button
-              onClick={togglePausa}
-              disabled={loading}
-              className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors"
-              title={goal.estado === 'pausada' ? 'Reactivar' : 'Pausar'}
-            >
-              {goal.estado === 'pausada' ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-            </button>
-          )}
-          <button
-            onClick={handleDelete}
-            disabled={loading}
-            className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+        <div className="shrink-0">
+          <ActionMenu items={[
+            ...(goal.estado !== 'completada' ? [{
+              label: goal.estado === 'pausada' ? 'Reactivar meta' : 'Pausar meta',
+              icon: goal.estado === 'pausada' ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />,
+              onClick: togglePausa,
+              disabled: loading,
+            }] : []),
+            ...(goal.estado === 'activa' && goal.monto_actual > 0 ? [{
+              label: 'Enviar al Fondo General',
+              icon: <ArrowLeft className="h-4 w-4" />,
+              onClick: () => setModalEnviarGeneral(true),
+            }] : []),
+            {
+              label: 'Eliminar meta',
+              icon: <Trash2 className="h-4 w-4" />,
+              onClick: handleDelete,
+              danger: true,
+              disabled: loading,
+            },
+          ] as ActionMenuItem[]} />
         </div>
       </div>
 
@@ -257,18 +291,25 @@ export function GoalCard({ goal, allocations = [], onChanged, metasRegulares = [
         </div>
       )}
 
-      {/* Botón enviar al fondo general */}
-      {goal.estado === 'activa' && goal.monto_actual > 0 && (
+      {/* Acción principal a la vista: usar la meta. El resto vive en el menú "⋯". */}
+      {goal.monto_actual > 0 && (
         <Button
           size="sm"
           variant="secondary"
-          onClick={() => setModalEnviarGeneral(true)}
-          className="mt-3 w-full text-xs text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700"
+          onClick={() => setModalUsar(true)}
+          className="mt-3 w-full text-xs border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
         >
-          <ArrowLeft className="h-3 w-3" />
-          Enviar al Fondo General
+          <Check className="h-3 w-3" />
+          Usar esta meta
         </Button>
       )}
+
+      <UsarMetaModal
+        open={modalUsar}
+        onClose={() => setModalUsar(false)}
+        goal={goal}
+        onSuccess={onChanged}
+      />
 
       {/* Modal enviar al fondo general */}
       <Modal

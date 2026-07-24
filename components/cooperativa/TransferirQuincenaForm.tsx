@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { CooperativaCuenta, IncomeEntry } from '@/lib/types/database'
+import { useCuentas } from '@/lib/cuentas/useCuentas'
 import { todayISO, formatDate } from '@/lib/utils/dates'
 import { formatHNL } from '@/lib/utils/currency'
 import { nombreCuenta } from '@/lib/cooperativa/interes'
@@ -19,6 +20,7 @@ const schema = z.object({
   income_id: z.string().min(1, 'Requerido'),
   monto: z.string().min(1, 'Requerido').refine(v => parseFloat(v) > 0, 'Debe ser mayor a 0'),
   fecha: z.string().min(1, 'Requerido'),
+  cuenta_bancaria_id: z.string().min(1, 'Selecciona la cuenta'),
   notas: z.string().optional(),
 })
 
@@ -35,17 +37,24 @@ interface Props {
 export function TransferirQuincenaForm({ cuentas, incomes, cuentaPreseleccionada, onSuccess, onCancel }: Props) {
   const [loading, setLoading] = useState(false)
   const quincenaActual = incomes.find(i => i.es_quincena_actual) ?? incomes[0]
+  const { cuentas: cuentasBanco, principal } = useCuentas()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       cuenta_id: cuentaPreseleccionada ?? cuentas[0]?.id ?? '',
       income_id: quincenaActual?.id ?? '',
       monto: '',
       fecha: todayISO(),
+      cuenta_bancaria_id: '',
       notas: '',
     },
   })
+
+  const cuentaBancariaId = watch('cuenta_bancaria_id')
+  useEffect(() => {
+    if (!cuentaBancariaId && principal) setValue('cuenta_bancaria_id', principal.id)
+  }, [principal, cuentaBancariaId, setValue])
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -60,6 +69,7 @@ export function TransferirQuincenaForm({ cuentas, incomes, cuentaPreseleccionada
       p_monto: parseFloat(data.monto),
       p_fecha: data.fecha,
       p_notas: data.notas || null,
+      p_cuenta_bancaria_id: data.cuenta_bancaria_id || null,
     })
 
     if (error) {
@@ -104,6 +114,14 @@ export function TransferirQuincenaForm({ cuentas, incomes, cuentaPreseleccionada
         {...register('cuenta_id')}
       />
 
+      <Select
+        label="Cuenta de la que sale el dinero"
+        placeholder="Seleccionar..."
+        options={cuentasBanco.map(c => ({ value: c.id, label: c.nombre }))}
+        error={errors.cuenta_bancaria_id?.message}
+        {...register('cuenta_bancaria_id')}
+      />
+
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="Monto (L)"
@@ -129,7 +147,8 @@ export function TransferirQuincenaForm({ cuentas, incomes, cuentaPreseleccionada
       />
 
       <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
-        Esta transferencia se descuenta del sobrante de la quincena seleccionada y se suma al saldo de la cuenta destino.
+        El dinero sale de la cuenta que elijas y se suma al saldo de la cooperativa,
+        así que tu disponible baja por este monto.
       </div>
 
       <div className="flex gap-3 pt-2">

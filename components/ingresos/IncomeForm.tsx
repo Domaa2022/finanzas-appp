@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Pin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useCuentas } from '@/lib/cuentas/useCuentas'
 import { todayISO } from '@/lib/utils/dates'
 import { formatHNL } from '@/lib/utils/currency'
 import { Button } from '@/components/ui/Button'
@@ -18,6 +19,7 @@ const schema = z.object({
   fuente: z.string().min(1, 'Requerido'),
   frecuencia: z.enum(['diario', 'semanal', 'quincenal', 'mensual']),
   fecha: z.string().min(1, 'Requerido'),
+  cuenta_id: z.string().min(1, 'Selecciona una cuenta'),
   notas: z.string().optional(),
 })
 
@@ -28,18 +30,48 @@ interface IncomeFormProps {
   onCancel?: () => void
 }
 
+/** Resultado de procesar_quincena (migración 031). */
+interface ResumenQuincena {
+  gastos_fijos: { count: number; total: number }
+  apartado: { count: number; total: number }
+  ahorros: { count: number; total: number }
+}
+
+/** Convierte el resumen de la RPC en las líneas de toast que se muestran. */
+function resumenQuincena(r: ResumenQuincena): string[] {
+  const lineas: string[] = []
+  if (r.gastos_fijos?.count > 0) {
+    lineas.push(`${r.gastos_fijos.count} gastos fijos aplicados (${formatHNL(r.gastos_fijos.total)})`)
+  }
+  if (r.apartado?.count > 0) {
+    lineas.push(`${formatHNL(r.apartado.total)} apartados para ${r.apartado.count} pagos próximos`)
+  }
+  if (r.ahorros?.count > 0) {
+    lineas.push(`${formatHNL(r.ahorros.total)} en ahorros programados`)
+  }
+  return lineas
+}
+
 export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
   const [loading, setLoading] = useState(false)
   const [fijarActual, setFijarActual] = useState(false)
+  const { cuentas, principal } = useCuentas()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       fecha: todayISO(),
       fuente: 'Quincena',
       frecuencia: 'quincenal',
+      cuenta_id: '',
     },
   })
+
+  // Preseleccionar la cuenta principal cuando cargan las cuentas.
+  const cuentaId = watch('cuenta_id')
+  useEffect(() => {
+    if (!cuentaId && principal) setValue('cuenta_id', principal.id)
+  }, [principal, cuentaId, setValue])
 
   async function onSubmit(data: FormData) {
     setLoading(true)
@@ -80,17 +112,22 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
         .eq('user_id', user.id)
     }
 
-    const { error } = await supabase.from('income_entries').insert({
-      user_id: user.id,
-      monto: parseFloat(data.monto),
-      fuente: data.fuente,
-      frecuencia: data.frecuencia,
-      fecha: data.fecha,
-      ahorro_tipo: 'ninguno',
-      ahorro_valor: 0,
-      notas: data.notas || null,
-      es_quincena_actual: fijarActual,
-    })
+    const { data: nuevoIngreso, error } = await supabase
+      .from('income_entries')
+      .insert({
+        user_id: user.id,
+        monto: parseFloat(data.monto),
+        fuente: data.fuente,
+        frecuencia: data.frecuencia,
+        fecha: data.fecha,
+        cuenta_id: data.cuenta_id,
+        ahorro_tipo: 'ninguno',
+        ahorro_valor: 0,
+        notas: data.notas || null,
+        es_quincena_actual: fijarActual,
+      })
+      .select('id')
+      .single()
 
     if (error) {
       toast.error('Error al guardar ingreso')
@@ -99,6 +136,23 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
     }
 
     toast.success(fijarActual ? 'Ingreso registrado y fijado como quincena actual' : 'Ingreso registrado')
+
+    // Al fijar la quincena se aplican solos los gastos fijos quincenales, el
+    // apartado de los mensuales/suscripciones y los ahorros programados.
+    // No bloquea el registro: si falla, el ingreso ya quedó guardado.
+    if (fijarActual && nuevoIngreso) {
+      const { data: resumen, error: procesarError } = await supabase.rpc('procesar_quincena', {
+        p_user_id: user.id,
+        p_income_id: nuevoIngreso.id,
+      })
+
+      if (procesarError) {
+        toast.warning('No se pudieron aplicar los movimientos automáticos de la quincena')
+      } else if (resumen) {
+        for (const linea of resumenQuincena(resumen)) toast.success(linea)
+      }
+    }
+
     onSuccess()
     setLoading(false)
   }
@@ -134,12 +188,21 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
         />
       </div>
 
-      <Input
-        label="Fecha de recepción"
-        type="date"
-        error={errors.fecha?.message}
-        {...register('fecha')}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <Select
+          label="Cuenta destino"
+          placeholder="Seleccionar..."
+          options={cuentas.map(c => ({ value: c.id, label: c.nombre }))}
+          error={errors.cuenta_id?.message}
+          {...register('cuenta_id')}
+        />
+        <Input
+          label="Fecha de recepción"
+          type="date"
+          error={errors.fecha?.message}
+          {...register('fecha')}
+        />
+      </div>
 
       <Input
         label="Notas (opcional)"

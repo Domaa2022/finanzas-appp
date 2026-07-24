@@ -42,3 +42,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# herramientas locales de sincronización de diseño
+/.design-sync/
+/.ds-sync/
+/ds-bundle/

@@ -36,11 +36,20 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
   const totalAhorrado = metasEnCurso.reduce((sum, g) => sum + g.monto_actual, 0)
   const totalObjetivo = metasEnCurso.reduce((sum, g) => sum + g.monto_objetivo, 0)
 
+  // «Completada» significa dos cosas distintas según si aún tiene dinero:
+  //   · con saldo  → alcanzó su objetivo y está lista para usarse
+  //   · en cero    → ya se usó; solo queda como historial
+  const completadas = regularGoals.filter(g => g.estado === 'completada')
+
   const goalsByStatus = {
     activa: regularGoals.filter(g => g.estado === 'activa'),
     pausada: regularGoals.filter(g => g.estado === 'pausada'),
-    completada: regularGoals.filter(g => g.estado === 'completada'),
+    listasParaUsar: completadas.filter(g => g.monto_actual > 0.01),
+    archivadas: completadas.filter(g => g.monto_actual <= 0.01),
   }
+
+  // Destinos válidos para traslados y ahorros manuales: nunca una meta cumplida.
+  const metasDestino = regularGoals.filter(g => g.estado !== 'completada')
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl mx-auto">
@@ -71,7 +80,7 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
             goal={generalGoal}
             allocations={allocations.filter(a => a.savings_goal_id === generalGoal.id)}
             onChanged={() => router.refresh()}
-            metasRegulares={regularGoals}
+            metasRegulares={metasDestino}
           />
         </section>
       )}
@@ -99,6 +108,25 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
         </section>
       )}
 
+      {/* Metas que alcanzaron su objetivo y todavía tienen el dinero */}
+      {goalsByStatus.listasParaUsar.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide mb-3">
+            Listas para usar
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {goalsByStatus.listasParaUsar.map(goal => (
+              <GoalCard
+                key={goal.id}
+                goal={goal}
+                allocations={allocations.filter(a => a.savings_goal_id === goal.id)}
+                onChanged={() => router.refresh()}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {goalsByStatus.pausada.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-3">Pausadas</h2>
@@ -115,18 +143,19 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
         </section>
       )}
 
-      {goalsByStatus.completada.length > 0 && (
+      {/* Historial: metas ya usadas. Lista compacta, sin tarjetas. */}
+      {goalsByStatus.archivadas.length > 0 && (
         <section>
           <button
             onClick={() => setArchivosVisible(v => !v)}
-            className="flex items-center gap-2 text-sm font-semibold text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 uppercase tracking-wide mb-3 transition-colors"
+            className="flex items-center gap-2 text-sm font-semibold text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 uppercase tracking-wide mb-2 transition-colors"
           >
             {archivosVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            Archivadas ({goalsByStatus.completada.length})
+            Metas cumplidas ({goalsByStatus.archivadas.length})
           </button>
           {archivosVisible && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {goalsByStatus.completada.map(goal => (
+            <div className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 divide-y divide-gray-50 dark:divide-slate-700">
+              {goalsByStatus.archivadas.map(goal => (
                 <GoalCard
                   key={goal.id}
                   goal={goal}
@@ -145,7 +174,7 @@ export default function AhorrosClientPage({ initialGoals, allocations }: Props) 
 
       <Modal open={modalAhorroOpen} onClose={() => setModalAhorroOpen(false)} title="Registrar ahorro">
         <ManualSavingForm
-          goals={regularGoals}
+          goals={metasDestino}
           onSuccess={handleSuccess}
           onCancel={() => setModalAhorroOpen(false)}
         />
