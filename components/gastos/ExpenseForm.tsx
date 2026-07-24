@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { Category } from '@/lib/types/database'
+import { useCuentas } from '@/lib/cuentas/useCuentas'
 import { todayISO } from '@/lib/utils/dates'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -15,6 +16,7 @@ import { Select } from '@/components/ui/Select'
 const schema = z.object({
   monto: z.string().min(1, 'Requerido').refine(v => parseFloat(v) > 0, 'Debe ser mayor a 0'),
   category_id: z.string().min(1, 'Selecciona una categoría'),
+  cuenta_id: z.string().min(1, 'Selecciona una cuenta'),
   descripcion: z.string().min(1, 'Requerido'),
   fecha: z.string().min(1, 'Requerido'),
   notas: z.string().optional(),
@@ -31,22 +33,30 @@ interface ExpenseFormProps {
 export function ExpenseForm({ categories, onSuccess, onCancel }: ExpenseFormProps) {
   const [loading, setLoading] = useState(false)
   const expenseCategories = categories.filter(c => c.tipo === 'gasto')
+  const { cuentas, principal } = useCuentas()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { fecha: todayISO() },
+    defaultValues: { fecha: todayISO(), cuenta_id: '' },
   })
+
+  // Preseleccionar la cuenta principal cuando cargan las cuentas.
+  const cuentaId = watch('cuenta_id')
+  useEffect(() => {
+    if (!cuentaId && principal) setValue('cuenta_id', principal.id)
+  }, [principal, cuentaId, setValue])
 
   async function onSubmit(data: FormData) {
     setLoading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) { setLoading(false); return }
 
     const { error } = await supabase.from('expenses').insert({
       user_id: user.id,
       monto: parseFloat(data.monto),
       category_id: data.category_id,
+      cuenta_id: data.cuenta_id,
       descripcion: data.descripcion,
       fecha: data.fecha,
       notas: data.notas || null,
@@ -89,12 +99,21 @@ export function ExpenseForm({ categories, onSuccess, onCancel }: ExpenseFormProp
         {...register('descripcion')}
       />
 
-      <Input
-        label="Fecha"
-        type="date"
-        error={errors.fecha?.message}
-        {...register('fecha')}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <Select
+          label="Cuenta"
+          placeholder="Seleccionar..."
+          options={cuentas.map(c => ({ value: c.id, label: c.nombre }))}
+          error={errors.cuenta_id?.message}
+          {...register('cuenta_id')}
+        />
+        <Input
+          label="Fecha"
+          type="date"
+          error={errors.fecha?.message}
+          {...register('fecha')}
+        />
+      </div>
 
       <Input
         label="Notas (opcional)"

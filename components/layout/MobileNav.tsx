@@ -6,17 +6,19 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, ArrowDownCircle, ArrowUpCircle, PiggyBank,
   ReceiptText, Sparkles, BarChart3, FileText, Tags, CreditCard,
-  Settings, CalendarRange, Wallet, HandCoins, Building2, Menu, X,
+  Settings, CalendarRange, Wallet, HandCoins, Building2, Landmark, Menu, X,
 } from 'lucide-react'
+import { isActiveRoute } from '@/lib/utils/nav'
 
 const primaryItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
-  { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
+  { href: '/cuentas', label: 'Cuentas', icon: Landmark },
   { href: '/gastos', label: 'Gastos', icon: ArrowDownCircle },
   { href: '/ahorros', label: 'Ahorros', icon: PiggyBank },
 ]
 
 const moreItems = [
+  { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
   { href: '/gastos-fijos', label: 'Gastos Fijos', icon: ReceiptText },
   { href: '/suscripciones', label: 'Suscripciones', icon: CreditCard },
   { href: '/deudas', label: 'Deudas', icon: HandCoins },
@@ -35,7 +37,7 @@ export function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false)
 
   // El botón "Más" se marca activo si la ruta actual está dentro de su lista
-  const moreActive = moreItems.some(i => pathname.startsWith(i.href))
+  const moreActive = moreItems.some(i => isActiveRoute(pathname, i.href))
 
   return (
     <>
@@ -56,7 +58,7 @@ export function MobileNav() {
             </div>
             <div className="grid grid-cols-3 gap-2 p-4 pt-2">
               {moreItems.map(({ href, label, icon: Icon }) => {
-                const active = pathname.startsWith(href)
+                const active = isActiveRoute(pathname, href)
                 return (
                   <Link
                     key={href}
@@ -81,7 +83,7 @@ export function MobileNav() {
       {/* Barra inferior fija */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 pb-[env(safe-area-inset-bottom)]">
         {primaryItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href)
+          const active = isActiveRoute(pathname, href)
           return (
             <Link
               key={href}

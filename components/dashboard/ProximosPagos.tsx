@@ -20,7 +20,9 @@ export interface PagoMensual {
 }
 
 export function ProximosPagos({ pagos }: { pagos: PagoMensual[] }) {
-  if (pagos.length === 0) return null
+  const proximos = pagos.filter(p => p.dias !== null && p.dias <= 5).slice(0, 2)
+
+  if (proximos.length === 0) return null
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
@@ -35,7 +37,7 @@ export function ProximosPagos({ pagos }: { pagos: PagoMensual[] }) {
       </div>
 
       <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700">
-        {pagos.map(p => {
+        {proximos.map(p => {
           const listo = p.falta <= 0.01
           return (
             <div key={p.id} className="py-3 first:pt-0 last:pb-0">

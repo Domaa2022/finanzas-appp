@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
+import { publicSans, plexMono } from './fonts'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning className={`${publicSans.variable} ${plexMono.variable}`}>
       <head>
         {/* Apply theme before first paint to avoid flash */}
         <script dangerouslySetInnerHTML={{
