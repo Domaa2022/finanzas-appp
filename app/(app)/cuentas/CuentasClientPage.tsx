@@ -7,13 +7,14 @@ import {
   Plus, ArrowLeftRight, Pencil, Trash2, Star, Wallet,
   PiggyBank, Building2, Landmark, ArrowRight, CreditCard,
 } from 'lucide-react'
-import { Cuenta, SaldoCuenta } from '@/lib/types/database'
+import { Cuenta, SaldoCuenta, SaldoLinea } from '@/lib/types/database'
 import { formatHNL } from '@/lib/utils/currency'
 import { formatDate } from '@/lib/utils/dates'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Modal } from '@/components/ui/Modal'
 import { CuentaForm } from '@/components/cuentas/CuentaForm'
 import { TransferForm } from '@/components/cuentas/TransferForm'
@@ -36,6 +37,8 @@ interface Props {
   ahorrosApartados: number
   /** Metas completadas: dinero ya gastado. Resta del disponible pero NO es ahorro. */
   apartadoCompletadas: number
+  /** Líneas de crédito compartidas con su disponible calculado. */
+  lineas: SaldoLinea[]
 }
 
 function iconoTipo(tipo: string) {
@@ -46,7 +49,7 @@ function iconoTipo(tipo: string) {
   return Landmark
 }
 
-export default function CuentasClientPage({ saldos, cuentas, transferencias, ahorrosApartados, apartadoCompletadas }: Props) {
+export default function CuentasClientPage({ saldos, cuentas, transferencias, ahorrosApartados, apartadoCompletadas, lineas }: Props) {
   const router = useRouter()
   const [formOpen, setFormOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
@@ -68,6 +71,7 @@ export default function CuentasClientPage({ saldos, cuentas, transferencias, aho
   const cuentasLiquidas = saldos.filter(s => s.es_disponible)
   const tarjetas = saldos.filter(s => s.tipo === 'tarjeta')
   const deudaTarjetas = tarjetas.reduce((sum, s) => sum + Math.max(-Number(s.saldo), 0), 0)
+  const lineaPorId = new Map(lineas.map(l => [l.id, l]))
 
   // El dinero apartado en metas sigue físicamente en las cuentas líquidas, pero
   // no es gastable: se descuenta del disponible y se suma a lo ahorrado. Así los
@@ -160,6 +164,30 @@ export default function CuentasClientPage({ saldos, cuentas, transferencias, aho
         </div>
       )}
 
+      {/* Líneas de crédito compartidas */}
+      {lineas.map(l => {
+        const pct = l.limite > 0 ? Math.min((l.deuda / l.limite) * 100, 100) : 0
+        return (
+          <div key={l.id} className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-4">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <CreditCard className="h-4 w-4 text-indigo-500 shrink-0" />
+                <span className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{l.nombre}</span>
+                <span className="text-xs text-gray-400 dark:text-slate-500">· cupo compartido</span>
+              </div>
+              <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                {formatHNL(l.disponible)} disp.
+              </span>
+            </div>
+            <ProgressBar value={pct} />
+            <div className="flex justify-between mt-1 text-xs text-gray-400 dark:text-slate-500">
+              <span>Debés {formatHNL(l.deuda)}</span>
+              <span>de {formatHNL(l.limite)}</span>
+            </div>
+          </div>
+        )
+      })}
+
       {/* Lista de cuentas */}
       <Card padding="none">
         <div className="flex flex-col divide-y divide-gray-50 dark:divide-slate-700 px-6">
@@ -169,11 +197,15 @@ export default function CuentasClientPage({ saldos, cuentas, transferencias, aho
             const esTarjeta = s.tipo === 'tarjeta'
             const raw = esTarjeta ? cuentas.find(c => c.id === s.id) : undefined
             const deuda = Math.max(-Number(s.saldo), 0)
-            const creditoDisp = raw?.cupo != null ? raw.cupo - deuda : null
+            const linea = raw?.linea_credito_id ? lineaPorId.get(raw.linea_credito_id) : undefined
+            // Crédito disponible: compartido de la línea, o el cupo propio de la tarjeta.
+            const creditoDisp = linea ? linea.disponible : (raw?.cupo != null ? raw.cupo - deuda : null)
+            const creditoLabel = linea ? `en ${linea.nombre}` : 'de cupo'
 
             // Subtítulo por tipo de cuenta
             const subtitulo = esTarjeta
               ? [
+                  linea ? 'cupo compartido' : null,
                   raw?.dia_corte ? `corte ${raw.dia_corte}` : null,
                   raw?.dia_pago ? `pago ${raw.dia_pago}` : null,
                 ].filter(Boolean).join(' · ') || 'Tarjeta de crédito'
@@ -208,7 +240,7 @@ export default function CuentasClientPage({ saldos, cuentas, transferencias, aho
                         {deuda > 0.01 ? `Debés ${formatHNL(deuda)}` : 'Al día'}
                       </p>
                       {creditoDisp != null && (
-                        <p className="text-xs text-gray-400 dark:text-slate-500">{formatHNL(creditoDisp)} de cupo</p>
+                        <p className="text-xs text-gray-400 dark:text-slate-500">{formatHNL(creditoDisp)} {creditoLabel}</p>
                       )}
                     </div>
                   ) : (

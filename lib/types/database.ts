@@ -9,6 +9,8 @@ export interface Profile {
   email: string
   default_savings_pct: number
   avatar_url: string | null
+  onboarding_completo: boolean
+  preferencias: import('@/lib/preferencias').Preferencias | null
   created_at: string
   updated_at: string
 }
@@ -45,8 +47,29 @@ export interface Cuenta {
   cupo: number | null
   dia_corte: number | null
   dia_pago: number | null
+  /** Si la tarjeta comparte cupo con otras, apunta a la línea. NULL = cupo propio. */
+  linea_credito_id: string | null
   created_at: string
   updated_at: string
+}
+
+/** Línea de crédito compartida entre varias tarjetas (límite en HNL). */
+export interface LineaCredito {
+  id: string
+  user_id: string
+  nombre: string
+  limite: number
+  created_at: string
+  updated_at: string
+}
+
+/** Fila de get_lineas_credito: la línea con su deuda y disponible calculados. */
+export interface SaldoLinea {
+  id: string
+  nombre: string
+  limite: number
+  deuda: number
+  disponible: number
 }
 
 export type TipoTransferencia = 'traspaso' | 'pago_tarjeta'

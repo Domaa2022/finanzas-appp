@@ -9,35 +9,41 @@ import {
   Settings, CalendarRange, Wallet, HandCoins, Building2, Landmark, Menu, X,
 } from 'lucide-react'
 import { isActiveRoute } from '@/lib/utils/nav'
+import { ModuloKey } from '@/lib/preferencias'
 
-const primaryItems = [
+type NavItem = { href: string; label: string; icon: typeof LayoutDashboard; modulo?: ModuloKey }
+
+const primaryItems: NavItem[] = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
   { href: '/cuentas', label: 'Cuentas', icon: Landmark },
   { href: '/gastos', label: 'Gastos', icon: ArrowDownCircle },
-  { href: '/ahorros', label: 'Ahorros', icon: PiggyBank },
+  { href: '/ahorros', label: 'Ahorros', icon: PiggyBank, modulo: 'ahorros' },
 ]
 
-const moreItems = [
+const moreItems: NavItem[] = [
   { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
-  { href: '/gastos-fijos', label: 'Gastos Fijos', icon: ReceiptText },
-  { href: '/suscripciones', label: 'Suscripciones', icon: CreditCard },
-  { href: '/deudas', label: 'Deudas', icon: HandCoins },
-  { href: '/ahorro-programado', label: 'Ahorro Prog.', icon: Sparkles },
-  { href: '/cooperativa', label: 'Cooperativa', icon: Building2 },
-  { href: '/quincena', label: 'Quincena', icon: CalendarRange },
-  { href: '/efectivo', label: 'Efectivo', icon: Wallet },
-  { href: '/presupuestos', label: 'Presupuestos', icon: BarChart3 },
+  { href: '/gastos-fijos', label: 'Gastos Fijos', icon: ReceiptText, modulo: 'gastos_fijos' },
+  { href: '/suscripciones', label: 'Suscripciones', icon: CreditCard, modulo: 'suscripciones' },
+  { href: '/deudas', label: 'Deudas', icon: HandCoins, modulo: 'deudas' },
+  { href: '/ahorro-programado', label: 'Ahorro Prog.', icon: Sparkles, modulo: 'ahorro_programado' },
+  { href: '/cooperativa', label: 'Cooperativa', icon: Building2, modulo: 'cooperativa' },
+  { href: '/quincena', label: 'Quincena', icon: CalendarRange, modulo: 'quincena' },
+  { href: '/efectivo', label: 'Efectivo', icon: Wallet, modulo: 'efectivo' },
+  { href: '/presupuestos', label: 'Presupuestos', icon: BarChart3, modulo: 'presupuestos' },
   { href: '/reportes', label: 'Reportes', icon: FileText },
-  { href: '/categorias', label: 'Categorías', icon: Tags },
+  { href: '/categorias', label: 'Categorías', icon: Tags, modulo: 'categorias' },
   { href: '/configuracion', label: 'Configuración', icon: Settings },
 ]
 
-export function MobileNav() {
+export function MobileNav({ modulos = {} }: { modulos?: Record<string, boolean> }) {
   const pathname = usePathname()
   const [moreOpen, setMoreOpen] = useState(false)
+  const visible = (i: NavItem) => !i.modulo || modulos[i.modulo]
+  const primary = primaryItems.filter(visible)
+  const more = moreItems.filter(visible)
 
   // El botón "Más" se marca activo si la ruta actual está dentro de su lista
-  const moreActive = moreItems.some(i => isActiveRoute(pathname, i.href))
+  const moreActive = more.some(i => isActiveRoute(pathname, i.href))
 
   return (
     <>
@@ -57,7 +63,7 @@ export function MobileNav() {
               </button>
             </div>
             <div className="grid grid-cols-3 gap-2 p-4 pt-2">
-              {moreItems.map(({ href, label, icon: Icon }) => {
+              {more.map(({ href, label, icon: Icon }) => {
                 const active = isActiveRoute(pathname, href)
                 return (
                   <Link
@@ -82,7 +88,7 @@ export function MobileNav() {
 
       {/* Barra inferior fija */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 pb-[env(safe-area-inset-bottom)]">
-        {primaryItems.map(({ href, label, icon: Icon }) => {
+        {primary.map(({ href, label, icon: Icon }) => {
           const active = isActiveRoute(pathname, href)
           return (
             <Link
