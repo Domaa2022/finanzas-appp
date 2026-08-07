@@ -14,10 +14,11 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nombre')
+    .select('nombre, preferencias')
     .eq('id', user.id)
     .single()
 
+  const usaQuincena = !!(profile?.preferencias as { modulos?: Record<string, boolean> } | null)?.modulos?.quincena
   const primerNombre = profile?.nombre?.split(' ')[0] ?? 'Usuario'
   const saludo = `${saludoDelDia()}, ${primerNombre}`
   const fechaHoyLabel = (() => {
@@ -276,6 +277,7 @@ export default async function DashboardPage() {
       saldosCuentas={saldosCuentas}
       ahorrosApartados={Number(totales.ahorros_apartados ?? 0)}
       apartadoCompletadas={Number(totales.apartado_completadas ?? 0)}
+      usaQuincena={usaQuincena}
     />
   )
 }

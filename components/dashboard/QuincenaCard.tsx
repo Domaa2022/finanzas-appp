@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { formatHNL } from '@/lib/utils/currency'
+import { terminoPeriodo } from '@/lib/periodo'
 import { todayISO } from '@/lib/utils/dates'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
@@ -93,6 +94,7 @@ export function QuincenaCard({
 
   const sobrante = ultimoIngresoMonto - gastosDesdeIngreso - ahorrosYaAplicados
   const cycle = getCycleInfo(ultimoIngresoFecha, ultimoIngresoFrecuencia)
+  const term = terminoPeriodo(ultimoIngresoFrecuencia)
 
   const gastoDiario = cycle.elapsed > 0 ? Math.round(gastosDesdeIngreso / cycle.elapsed) : 0
   const proyeccionGasto = gastoDiario * cycle.cycleDays
@@ -167,7 +169,7 @@ export function QuincenaCard({
           <div className="absolute -right-10 -top-14 h-48 w-48 rounded-full bg-white/10" />
           <div className="relative flex items-start justify-between gap-3 mb-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-100">Ciclo de quincena actual</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-100">Ciclo de {term.singular} actual</p>
               <h2 className="text-lg font-bold mt-0.5" title={ultimoIngresoFuente}>
                 {format(new Date(ultimoIngresoFecha + 'T12:00:00'), "d MMM", { locale: es })} → {format(cycle.nextPayment, "d MMM", { locale: es })}
               </h2>

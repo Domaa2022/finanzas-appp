@@ -48,6 +48,7 @@ interface Props {
   saldosCuentas: SaldoCuenta[]
   ahorrosApartados: number
   apartadoCompletadas: number
+  usaQuincena: boolean
 }
 
 export default function DashboardClientPage({
@@ -68,6 +69,7 @@ export default function DashboardClientPage({
   saldosCuentas,
   ahorrosApartados,
   apartadoCompletadas,
+  usaQuincena,
 }: Props) {
   const hayMetas = goals.some((g: any) => g.estado === 'activa' && !g.es_general)
 
@@ -78,13 +80,13 @@ export default function DashboardClientPage({
         <p className="text-sm text-gray-400 dark:text-slate-500">{fechaHoyLabel}</p>
       </div>
 
-      {quincenaData ? (
+      {usaQuincena && (quincenaData ? (
         <QuincenaCard {...quincenaData} />
       ) : (
         <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 text-center text-sm text-gray-400 dark:text-slate-500">
           Registra tu primer ingreso para ver el resumen de tu último período
         </div>
-      )}
+      ))}
 
       <BalanceCard
         saldoDisponible={saldoDisponible}
@@ -95,6 +97,11 @@ export default function DashboardClientPage({
         cuentasLiquidas={saldosCuentas.filter(s => s.es_disponible)}
         ahorrosApartados={ahorrosApartados}
         apartadoCompletadas={apartadoCompletadas}
+        ahorrado={
+          saldosCuentas
+            .filter(s => !s.es_disponible && s.tipo !== 'tarjeta')
+            .reduce((sum, s) => sum + Number(s.saldo), 0) + ahorrosApartados
+        }
       />
 
       <CuentasResumen saldos={saldosCuentas} />

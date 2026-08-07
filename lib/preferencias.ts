@@ -22,7 +22,7 @@ export interface Preferencias {
 
 /** Catálogo de módulos activables, con su etiqueta y una descripción corta. */
 export const MODULOS: { key: ModuloKey; label: string; descripcion: string }[] = [
-  { key: 'quincena',          label: 'Quincena',            descripcion: 'Presupuesto por período de pago' },
+  { key: 'quincena',          label: 'Período de pago',     descripcion: 'Presupuesto por quincena, mes o semana' },
   { key: 'gastos_fijos',      label: 'Gastos fijos',        descripcion: 'Pagos recurrentes de cada quincena' },
   { key: 'suscripciones',     label: 'Suscripciones',       descripcion: 'Pagos con fondo (mensual, anual…)' },
   { key: 'ahorros',           label: 'Metas de ahorro',     descripcion: 'Fondo general y metas' },

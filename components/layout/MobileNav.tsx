@@ -15,13 +15,13 @@ type NavItem = { href: string; label: string; icon: typeof LayoutDashboard; modu
 
 const primaryItems: NavItem[] = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
-  { href: '/cuentas', label: 'Cuentas', icon: Landmark },
+  { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
   { href: '/gastos', label: 'Gastos', icon: ArrowDownCircle },
-  { href: '/ahorros', label: 'Ahorros', icon: PiggyBank, modulo: 'ahorros' },
+  { href: '/cuentas', label: 'Cuentas', icon: Landmark },
 ]
 
 const moreItems: NavItem[] = [
-  { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
+  { href: '/ahorros', label: 'Ahorros', icon: PiggyBank, modulo: 'ahorros' },
   { href: '/gastos-fijos', label: 'Gastos Fijos', icon: ReceiptText, modulo: 'gastos_fijos' },
   { href: '/suscripciones', label: 'Suscripciones', icon: CreditCard, modulo: 'suscripciones' },
   { href: '/deudas', label: 'Deudas', icon: HandCoins, modulo: 'deudas' },
@@ -35,12 +35,13 @@ const moreItems: NavItem[] = [
   { href: '/configuracion', label: 'Configuración', icon: Settings },
 ]
 
-export function MobileNav({ modulos = {} }: { modulos?: Record<string, boolean> }) {
+export function MobileNav({ modulos = {}, periodoLabel = 'Quincena' }: { modulos?: Record<string, boolean>; periodoLabel?: string }) {
   const pathname = usePathname()
   const [moreOpen, setMoreOpen] = useState(false)
   const visible = (i: NavItem) => !i.modulo || modulos[i.modulo]
-  const primary = primaryItems.filter(visible)
-  const more = moreItems.filter(visible)
+  const relabel = (i: NavItem) => (i.modulo === 'quincena' ? { ...i, label: periodoLabel } : i)
+  const primary = primaryItems.filter(visible).map(relabel)
+  const more = moreItems.filter(visible).map(relabel)
 
   // El botón "Más" se marca activo si la ruta actual está dentro de su lista
   const moreActive = more.some(i => isActiveRoute(pathname, i.href))
