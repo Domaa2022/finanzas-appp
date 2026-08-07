@@ -15,13 +15,13 @@ type NavItem = { href: string; label: string; icon: typeof LayoutDashboard; modu
 
 const primaryItems: NavItem[] = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
-  { href: '/cuentas', label: 'Cuentas', icon: Landmark },
+  { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
   { href: '/gastos', label: 'Gastos', icon: ArrowDownCircle },
-  { href: '/ahorros', label: 'Ahorros', icon: PiggyBank, modulo: 'ahorros' },
+  { href: '/cuentas', label: 'Cuentas', icon: Landmark },
 ]
 
 const moreItems: NavItem[] = [
-  { href: '/ingresos', label: 'Ingresos', icon: ArrowUpCircle },
+  { href: '/ahorros', label: 'Ahorros', icon: PiggyBank, modulo: 'ahorros' },
   { href: '/gastos-fijos', label: 'Gastos Fijos', icon: ReceiptText, modulo: 'gastos_fijos' },
   { href: '/suscripciones', label: 'Suscripciones', icon: CreditCard, modulo: 'suscripciones' },
   { href: '/deudas', label: 'Deudas', icon: HandCoins, modulo: 'deudas' },

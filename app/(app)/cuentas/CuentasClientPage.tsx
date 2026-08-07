@@ -143,12 +143,12 @@ export default function CuentasClientPage({ saldos, cuentas, transferencias, aho
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
-          <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Disponible</p>
+          <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Para usar</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-slate-100 mt-1">{formatHNL(disponible)}</p>
-          <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">en cuentas de gasto</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">dinero que podés gastar</p>
         </Card>
         <Card>
-          <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">En ahorro</p>
+          <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">Ahorrado</p>
           <p className="text-2xl font-bold text-violet-600 dark:text-violet-400 mt-1">{formatHNL(enAhorro)}</p>
           <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">metas, cuentas de ahorro y cooperativa</p>
         </Card>

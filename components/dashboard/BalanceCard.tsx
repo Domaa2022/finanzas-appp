@@ -15,11 +15,12 @@ interface BalanceCardProps {
   cuentasLiquidas: SaldoCuenta[]
   ahorrosApartados: number
   apartadoCompletadas: number
+  ahorrado: number
 }
 
 export function BalanceCard({
   saldoDisponible, ingresosMes, gastosMes, sobranteMes, cashBalance,
-  cuentasLiquidas, ahorrosApartados, apartadoCompletadas,
+  cuentasLiquidas, ahorrosApartados, apartadoCompletadas, ahorrado,
 }: BalanceCardProps) {
   const [showDesglose, setShowDesglose] = useState(false)
 
@@ -48,10 +49,15 @@ export function BalanceCard({
               <ChevronDown className={`ml-auto h-4 w-4 text-indigo-200 transition-transform ${showDesglose ? 'rotate-180' : ''}`} />
             )}
           </div>
+
+          {/* Dos partes: lo que se puede usar y lo que está ahorrado */}
+          <p className="text-[11px] font-medium uppercase tracking-wide text-indigo-100/90">Para usar</p>
           <p className="text-2xl font-bold font-mono-nums">{formatHNL(saldoDisponible === -0 ? 0 : saldoDisponible)}</p>
-          <p className="text-[11px] text-indigo-100/80 mt-1">
-            {hayDesglose ? (showDesglose ? 'ocultar detalle' : 'ver de dónde viene') : 'en todas tus cuentas'}
-          </p>
+
+          <div className="mt-3 flex items-center justify-between border-t border-white/15 pt-2.5">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-indigo-100/90">Ahorrado</span>
+            <span className="font-mono-nums text-sm font-semibold text-indigo-50">{formatHNL(ahorrado)}</span>
+          </div>
         </button>
 
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-5">
