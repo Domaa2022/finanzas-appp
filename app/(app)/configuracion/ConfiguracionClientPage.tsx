@@ -12,6 +12,7 @@ import { Profile } from '@/lib/types/database'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { FuncionesSection } from '@/components/configuracion/FuncionesSection'
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -437,6 +438,8 @@ export default function ConfiguracionClientPage({ profile, userId }: Props) {
       />
 
       <PerfilSection profile={profile} userId={userId} />
+
+      <FuncionesSection preferencias={profile.preferencias} />
 
       <PreferenciasSection profile={profile} userId={userId} />
 

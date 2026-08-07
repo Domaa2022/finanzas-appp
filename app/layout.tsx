@@ -1,12 +1,20 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
+import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister'
 import { publicSans, plexMono } from './fonts'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Mis Finanzas',
-  description: 'Aplicación de finanzas personales',
+  description: 'Tu dinero, bajo control.',
+  applicationName: 'Mis Finanzas',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Mis Finanzas' },
+  icons: { apple: '/apple-touch-icon.png' },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#4f46e5',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <Toaster position="top-right" richColors />
         </ThemeProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   )

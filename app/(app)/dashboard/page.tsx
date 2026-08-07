@@ -49,7 +49,7 @@ export default async function DashboardPage() {
       .order('fecha', { ascending: false }),
     supabase
       .from('expenses')
-      .select('monto, fecha, descripcion, notas, categories(nombre, color)')
+      .select('id, monto, fecha, descripcion, notas, categories(nombre, color)')
       .eq('user_id', user.id)
       .gte('fecha', windowStart)
       .order('fecha', { ascending: false }),
@@ -205,7 +205,7 @@ export default async function DashboardPage() {
       color: i.categories?.color || '#10B981',
     })),
     ...expenses.slice(0, 20).map((e: any) => ({
-      id: `e-${e.fecha}-${e.monto}`,
+      id: `e-${e.id}`,
       tipo: 'gasto' as const,
       monto: e.monto,
       descripcion: e.descripcion,

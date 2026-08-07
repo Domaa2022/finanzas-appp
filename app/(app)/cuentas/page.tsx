@@ -7,7 +7,7 @@ export default async function CuentasPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [saldosRes, cuentasRes, transfRes, totalesRes] = await Promise.all([
+  const [saldosRes, cuentasRes, transfRes, totalesRes, lineasRes] = await Promise.all([
     // Motor único de saldo: cuentas reales + cooperativa proyectada.
     supabase.rpc('get_saldos_cuentas', { p_user_id: user.id }),
     // Filas crudas para el formulario de edición.
@@ -21,6 +21,8 @@ export default async function CuentasPage() {
     // Total de ahorros apartados: misma fuente que el dashboard, para que el
     // "Disponible" de las dos pantallas dé exactamente lo mismo.
     supabase.rpc('get_dashboard_totales', { p_user_id: user.id }),
+    // Líneas de crédito compartidas (límite, deuda total, disponible).
+    supabase.rpc('get_lineas_credito', { p_user_id: user.id }),
   ])
 
   const t = totalesRes.data?.[0]
@@ -36,6 +38,7 @@ export default async function CuentasPage() {
       transferencias={(transfRes.data as any) || []}
       ahorrosApartados={ahorrosApartados}
       apartadoCompletadas={apartadoCompletadas}
+      lineas={lineasRes.data || []}
     />
   )
 }

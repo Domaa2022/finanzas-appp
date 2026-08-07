@@ -12,19 +12,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nombre, avatar_url')
+    .select('nombre, avatar_url, onboarding_completo, preferencias')
     .eq('id', user.id)
     .single()
 
+  // Usuario nuevo que aún no eligió sus módulos → a la bienvenida.
+  if (profile && !profile.onboarding_completo) redirect('/bienvenida')
+
+  const modulos = (profile?.preferencias as { modulos?: Record<string, boolean> } | null)?.modulos ?? {}
+
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      <Sidebar modulos={modulos} />
       <div className="flex flex-1 flex-col min-w-0">
         <Header userName={profile?.nombre} avatarUrl={profile?.avatar_url} />
         <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
           {children}
         </main>
-        <MobileNav />
+        <MobileNav modulos={modulos} />
       </div>
     </div>
   )
