@@ -43,5 +43,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  // Se excluyen los recursos del PWA (manifest y service worker) y los estáticos:
+  // deben servirse sin pasar por la redirección de auth, si no un usuario
+  // deslogueado no puede instalar la app ni registrar el service worker.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt)$).*)'],
 }
