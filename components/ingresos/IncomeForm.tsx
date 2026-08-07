@@ -9,6 +9,7 @@ import { Pin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useCuentas } from '@/lib/cuentas/useCuentas'
 import { useModulos } from '@/lib/useModulos'
+import { terminoPeriodo } from '@/lib/periodo'
 import { todayISO } from '@/lib/utils/dates'
 import { formatHNL } from '@/lib/utils/currency'
 import { Button } from '@/components/ui/Button'
@@ -57,8 +58,9 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
   const [loading, setLoading] = useState(false)
   const [fijarActual, setFijarActual] = useState(false)
   const { cuentas, principal } = useCuentas()
-  const { activo } = useModulos()
+  const { activo, cobro } = useModulos()
   const usaQuincena = activo('quincena')
+  const term = terminoPeriodo(cobro)
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -227,11 +229,11 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
           >
             <Pin className={`h-4 w-4 shrink-0 ${fijarActual ? 'text-violet-500' : ''}`} />
             <div className="flex flex-col gap-0">
-              <span className="font-medium leading-tight">Fijar como quincena actual</span>
+              <span className="font-medium leading-tight">Fijar como {term.singular} actual</span>
               <span className="text-xs opacity-70 leading-tight">
                 {fijarActual
-                  ? 'Este ingreso será la quincena principal del panel'
-                  : 'El panel usará este ingreso como referencia de quincena'}
+                  ? `Este ingreso será ${term.singular === 'mes' ? 'el mes' : `la ${term.singular}`} principal del panel`
+                  : `El panel usará este ingreso como referencia de ${term.singular}`}
               </span>
             </div>
             <div className={`ml-auto h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
@@ -242,7 +244,7 @@ export function IncomeForm({ onSuccess, onCancel }: IncomeFormProps) {
           </button>
 
           <p className="text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-700 rounded-lg px-3 py-2">
-            Al fijar este ingreso como quincena actual, el sobrante del período anterior se enviará automáticamente a tu Fondo General.
+            Al fijar este ingreso como {term.singular} actual, el sobrante del período anterior se enviará automáticamente a tu Fondo General.
           </p>
         </>
       )}

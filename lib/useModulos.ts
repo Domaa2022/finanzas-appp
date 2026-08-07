@@ -11,6 +11,7 @@ import { Modulos, ModuloKey } from '@/lib/preferencias'
  */
 export function useModulos() {
   const [modulos, setModulos] = useState<Partial<Modulos>>({})
+  const [cobro, setCobro] = useState<string | undefined>(undefined)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -21,7 +22,9 @@ export function useModulos() {
       supabase.from('profiles').select('preferencias').eq('id', user.id).maybeSingle()
         .then(({ data }) => {
           if (cancelado) return
-          setModulos((data?.preferencias as { modulos?: Partial<Modulos> } | null)?.modulos ?? {})
+          const prefs = data?.preferencias as { modulos?: Partial<Modulos>; cobro?: string } | null
+          setModulos(prefs?.modulos ?? {})
+          setCobro(prefs?.cobro)
           setLoaded(true)
         })
     })
@@ -30,6 +33,7 @@ export function useModulos() {
 
   return {
     modulos,
+    cobro,
     loaded,
     activo: (key: ModuloKey) => !!modulos[key],
   }

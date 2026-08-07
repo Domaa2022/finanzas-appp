@@ -42,9 +42,11 @@ const navItems: { href: string; label: string; icon: typeof LayoutDashboard; mod
   { href: '/categorias', label: 'Categorías', icon: Tags, modulo: 'categorias' },
 ]
 
-export function Sidebar({ modulos = {} }: { modulos?: Record<string, boolean> }) {
+export function Sidebar({ modulos = {}, periodoLabel = 'Quincena' }: { modulos?: Record<string, boolean>; periodoLabel?: string }) {
   const pathname = usePathname()
-  const items = navItems.filter(i => !i.modulo || modulos[i.modulo])
+  const items = navItems
+    .filter(i => !i.modulo || modulos[i.modulo])
+    .map(i => (i.modulo === 'quincena' ? { ...i, label: periodoLabel } : i))
 
   return (
     <aside className="hidden md:flex md:flex-col w-[76px] bg-white dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800 h-screen sticky top-0 items-center py-4 gap-4">
