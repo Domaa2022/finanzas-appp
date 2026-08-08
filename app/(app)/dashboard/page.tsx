@@ -87,7 +87,7 @@ export default async function DashboardPage() {
   const goals = goalsRes.data || []
   const gastosFijos = fixedRes.data || []
   const ahorrosProgramados = scheduledRes.data || []
-  const totales = totalesRes.data?.[0] ?? { total_ingresos: 0, total_gastos: 0, total_ahorros: 0, ahorros_apartados: 0, apartado_completadas: 0, cash_balance: 0, saldo_disponible: 0 }
+  const totales = totalesRes.data?.[0] ?? { total_ingresos: 0, total_gastos: 0, total_ahorros: 0, ahorros_apartados: 0, apartado_completadas: 0, deuda_tarjetas: 0, cash_balance: 0, saldo_disponible: 0 }
   const cashBalance = totales.cash_balance
   const saldosCuentas = saldosRes.data || []
 
@@ -184,7 +184,7 @@ export default async function DashboardPage() {
   // El fallback replica la fórmula vieja por si la RPC aún no trae el campo.
   const saldoDisponible = parseFloat(
     (totales.saldo_disponible
-      ?? (totales.total_ingresos - totales.total_gastos - totales.ahorros_apartados - totales.apartado_completadas + totales.cash_balance)
+      ?? (totales.total_ingresos - totales.total_gastos - totales.ahorros_apartados - totales.apartado_completadas - totales.deuda_tarjetas + totales.cash_balance)
     ).toFixed(2)
   )
 
@@ -277,6 +277,7 @@ export default async function DashboardPage() {
       saldosCuentas={saldosCuentas}
       ahorrosApartados={Number(totales.ahorros_apartados ?? 0)}
       apartadoCompletadas={Number(totales.apartado_completadas ?? 0)}
+      deudaTarjetas={Number(totales.deuda_tarjetas ?? 0)}
       usaQuincena={usaQuincena}
     />
   )

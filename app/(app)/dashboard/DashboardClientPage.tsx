@@ -48,6 +48,7 @@ interface Props {
   saldosCuentas: SaldoCuenta[]
   ahorrosApartados: number
   apartadoCompletadas: number
+  deudaTarjetas: number
   usaQuincena: boolean
 }
 
@@ -69,6 +70,7 @@ export default function DashboardClientPage({
   saldosCuentas,
   ahorrosApartados,
   apartadoCompletadas,
+  deudaTarjetas,
   usaQuincena,
 }: Props) {
   const hayMetas = goals.some((g: any) => g.estado === 'activa' && !g.es_general)
@@ -97,6 +99,7 @@ export default function DashboardClientPage({
         cuentasLiquidas={saldosCuentas.filter(s => s.es_disponible)}
         ahorrosApartados={ahorrosApartados}
         apartadoCompletadas={apartadoCompletadas}
+        deudaTarjetas={deudaTarjetas}
         ahorrado={
           saldosCuentas
             .filter(s => !s.es_disponible && s.tipo !== 'tarjeta')

@@ -82,9 +82,9 @@ export default function CuentasClientPage({ saldos, cuentas, transferencias, aho
   const saldoNoLiquido = saldos
     .filter(s => !s.es_disponible && s.tipo !== 'tarjeta')
     .reduce((sum, s) => sum + Number(s.saldo), 0)
-  // Disponible descuenta todo lo apartado (vigente + ya gastado en metas cumplidas).
-  // En ahorro solo suma lo vigente: las metas completadas ya no son ahorro.
-  const disponible = saldoLiquido - ahorrosApartados - apartadoCompletadas
+  // Disponible descuenta todo lo apartado (vigente + metas cumplidas) y también
+  // la deuda de tarjetas (esa plata ya está reservada para pagarlas).
+  const disponible = saldoLiquido - ahorrosApartados - apartadoCompletadas - deudaTarjetas
   const enAhorro = saldoNoLiquido + ahorrosApartados
 
   function openEdit(saldoId: string) {
@@ -158,7 +158,10 @@ export default function CuentasClientPage({ saldos, cuentas, transferencias, aho
         <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/40 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-red-500" />
-            <span className="text-sm font-medium text-red-700 dark:text-red-300">Deuda en tarjetas</span>
+            <div>
+              <span className="block text-sm font-medium text-red-700 dark:text-red-300">Reservado para tarjetas</span>
+              <span className="block text-xs text-red-600/70 dark:text-red-400/70">ya descontado de lo que podés usar</span>
+            </div>
           </div>
           <span className="text-lg font-bold text-red-600 dark:text-red-400">{formatHNL(deudaTarjetas)}</span>
         </div>
