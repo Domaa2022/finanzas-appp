@@ -15,19 +15,20 @@ interface BalanceCardProps {
   cuentasLiquidas: SaldoCuenta[]
   ahorrosApartados: number
   apartadoCompletadas: number
+  deudaTarjetas: number
   ahorrado: number
 }
 
 export function BalanceCard({
   saldoDisponible, ingresosMes, gastosMes, sobranteMes, cashBalance,
-  cuentasLiquidas, ahorrosApartados, apartadoCompletadas, ahorrado,
+  cuentasLiquidas, ahorrosApartados, apartadoCompletadas, deudaTarjetas, ahorrado,
 }: BalanceCardProps) {
   const [showDesglose, setShowDesglose] = useState(false)
 
-  // Solo tiene sentido desglosar si hay algo que mostrar (varias cuentas o
-  // ahorro apartado que explique por qué el disponible es menor a las cuentas).
+  // Solo tiene sentido desglosar si hay algo que mostrar (varias cuentas, ahorro
+  // apartado o deuda de tarjeta que expliquen por qué el disponible es menor).
   const hayDesglose = cuentasLiquidas.length > 0 &&
-    (cuentasLiquidas.length > 1 || ahorrosApartados > 0.01 || apartadoCompletadas > 0.01)
+    (cuentasLiquidas.length > 1 || ahorrosApartados > 0.01 || apartadoCompletadas > 0.01 || deudaTarjetas > 0.01)
 
   return (
     <div className="flex flex-col gap-4">
@@ -148,6 +149,19 @@ export function BalanceCard({
                 </span>
                 <span className="text-sm font-semibold text-gray-500 dark:text-slate-400 font-mono-nums">
                   −{formatHNL(apartadoCompletadas)}
+                </span>
+              </div>
+            )}
+
+            {deudaTarjetas > 0.01 && (
+              <div className="flex items-center gap-3 py-2">
+                <span className="h-2.5 w-2.5 rounded-full shrink-0 bg-red-400" />
+                <span className="flex-1 min-w-0 text-sm text-red-600 dark:text-red-400">
+                  Reservado para tarjetas
+                  <span className="block text-[11px] text-gray-400 dark:text-slate-500">lo que debés y vas a tener que pagar</span>
+                </span>
+                <span className="text-sm font-semibold text-red-600 dark:text-red-400 font-mono-nums">
+                  −{formatHNL(deudaTarjetas)}
                 </span>
               </div>
             )}

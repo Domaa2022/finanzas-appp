@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LogOut, Sun, Moon, Search, Bell } from 'lucide-react'
+import { LogOut, Sun, Moon, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import { useTheme } from '@/components/providers/ThemeProvider'
+import { NotificationsBell } from '@/components/layout/NotificationsBell'
 
 interface HeaderProps {
   userName?: string
@@ -51,13 +52,7 @@ export function Header({ userName, avatarUrl }: HeaderProps) {
         </button>
 
         {/* Notificaciones */}
-        <button
-          className="relative rounded-xl p-2 border border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
-          title="Notificaciones"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
-        </button>
+        <NotificationsBell />
 
         {/* Avatar + nombre → link a configuración */}
         <Link
