@@ -1,21 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { Deuda } from '@/lib/types/database'
+import { useCuentas } from '@/lib/cuentas/useCuentas'
 import { todayISO } from '@/lib/utils/dates'
 import { formatHNL } from '@/lib/utils/currency'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 
 const schema = z.object({
   monto: z.string().min(1, 'Requerido').refine(v => parseFloat(v) > 0, 'Debe ser mayor a 0'),
   fecha: z.string().min(1, 'Requerido'),
+  cuenta_id: z.string().min(1, 'Selecciona una cuenta'),
   notas: z.string().optional(),
 })
 
@@ -31,11 +34,18 @@ interface RegistrarPagoModalProps {
 export function RegistrarPagoModal({ deuda, open, onClose, onSuccess }: RegistrarPagoModalProps) {
   const [loading, setLoading] = useState(false)
   const pendiente = deuda.monto_total - deuda.monto_pagado
+  const { cuentas, principal } = useCuentas()
+  const esDeuda = deuda.tipo === 'deuda'
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { fecha: todayISO(), monto: '', notas: '' },
+    defaultValues: { fecha: todayISO(), monto: '', cuenta_id: '', notas: '' },
   })
+
+  const cuentaId = watch('cuenta_id')
+  useEffect(() => {
+    if (!cuentaId && principal) setValue('cuenta_id', principal.id)
+  }, [principal, cuentaId, setValue])
 
   async function onSubmit(data: FormData) {
     const monto = parseFloat(data.monto)
@@ -54,6 +64,7 @@ export function RegistrarPagoModal({ deuda, open, onClose, onSuccess }: Registra
       deuda_id: deuda.id,
       monto,
       fecha: data.fecha,
+      cuenta_id: data.cuenta_id,
       notas: data.notas || null,
     })
 
@@ -105,6 +116,21 @@ export function RegistrarPagoModal({ deuda, open, onClose, onSuccess }: Registra
             error={errors.fecha?.message}
             {...register('fecha')}
           />
+        </div>
+
+        <div>
+          <Select
+            label={esDeuda ? 'Pagar desde' : 'Recibir en'}
+            placeholder="Seleccionar cuenta..."
+            options={cuentas.map(c => ({ value: c.id, label: c.nombre }))}
+            error={errors.cuenta_id?.message}
+            {...register('cuenta_id')}
+          />
+          <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
+            {esDeuda
+              ? 'El monto sale de esta cuenta y baja tu disponible.'
+              : 'El monto entra a esta cuenta y sube tu disponible.'}
+          </p>
         </div>
 
         <Input
