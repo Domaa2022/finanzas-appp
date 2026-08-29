@@ -65,12 +65,19 @@ export function SubscriptionList({ items, categorias, onChanged }: Props) {
   async function handleDelete(item: FixedExpense) {
     const apartado = item.fondo?.monto_actual ?? 0
     const aviso = apartado > 0.01
-      ? `¿Eliminar ${item.nombre}? Tiene ${formatHNL(apartado)} apartados en su fondo; ese dinero queda en tus ahorros.`
+      ? `¿Eliminar ${item.nombre}? Los ${formatHNL(apartado)} que tenías apartados volverán a tu disponible.`
       : `¿Eliminar ${item.nombre}?`
     if (!confirm(aviso)) return
 
     setBusyId(item.id)
     const supabase = createClient()
+
+    // Borrar también el fondo de la suscripción: al borrar el savings_goal, sus
+    // allocations se eliminan en cascada y el dinero apartado vuelve al disponible.
+    // Si no, el fondo queda huérfano restando del disponible para siempre.
+    if (item.savings_goal_id) {
+      await supabase.from('savings_goals').delete().eq('id', item.savings_goal_id)
+    }
     const { error } = await supabase.from('fixed_expenses').delete().eq('id', item.id)
     if (error) toast.error('No se pudo eliminar')
     else {
