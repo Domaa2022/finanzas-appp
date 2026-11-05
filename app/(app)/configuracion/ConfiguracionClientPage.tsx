@@ -6,12 +6,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Camera, User, Lock, Sliders, Loader2, Eye, EyeOff } from 'lucide-react'
+import { Camera, User, Lock, Sliders, Loader2, Eye, EyeOff, Trash2, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types/database'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { FuncionesSection } from '@/components/configuracion/FuncionesSection'
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
@@ -408,6 +409,85 @@ function SeguridadSection() {
   )
 }
 
+// ── Eliminar cuenta ───────────────────────────────────────────────────────────
+
+const CONFIRM_WORD = 'ELIMINAR'
+
+function EliminarCuentaSection() {
+  const [open, setOpen] = useState(false)
+  const [texto, setTexto] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  function cerrar() {
+    if (loading) return
+    setOpen(false)
+    setTexto('')
+  }
+
+  async function handleDelete() {
+    if (texto !== CONFIRM_WORD) return
+    setLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('eliminar_mi_cuenta')
+
+    if (error) {
+      toast.error(error.message || 'No se pudo eliminar la cuenta')
+      setLoading(false)
+      return
+    }
+
+    await supabase.auth.signOut()
+    toast.success('Tu cuenta fue eliminada')
+    window.location.href = '/login'
+  }
+
+  return (
+    <Card className="!border-red-200 dark:!border-red-900/60">
+      <h2 className="text-base font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+        <Trash2 className="h-4 w-4" />
+        Eliminar perfil
+      </h2>
+      <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+        Borra permanentemente tu perfil y todos tus datos: ingresos, gastos, cuentas, ahorros,
+        deudas y configuración. Esta acción no se puede deshacer.
+      </p>
+      <Button variant="danger" onClick={() => setOpen(true)} className="w-fit">
+        <Trash2 className="h-4 w-4" />
+        Eliminar mi perfil
+      </Button>
+
+      <Modal open={open} onClose={cerrar} title="¿Eliminar tu perfil?" size="sm">
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-3 rounded-xl bg-red-50 dark:bg-red-950/30 p-3 text-sm text-red-700 dark:text-red-300">
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <p>Se eliminarán tu cuenta y todos tus datos de forma permanente. No podrás recuperarlos.</p>
+          </div>
+          <Input
+            label={`Escribe ${CONFIRM_WORD} para confirmar`}
+            value={texto}
+            onChange={e => setTexto(e.target.value)}
+            placeholder={CONFIRM_WORD}
+            autoComplete="off"
+          />
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={cerrar} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              loading={loading}
+              disabled={texto !== CONFIRM_WORD}
+            >
+              Eliminar definitivamente
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </Card>
+  )
+}
+
 // ── Página principal ──────────────────────────────────────────────────────────
 
 interface Props {
@@ -444,6 +524,8 @@ export default function ConfiguracionClientPage({ profile, userId }: Props) {
       <PreferenciasSection profile={profile} userId={userId} />
 
       <SeguridadSection />
+
+      <EliminarCuentaSection />
     </div>
   )
 }
