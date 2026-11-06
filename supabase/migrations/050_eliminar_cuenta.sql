@@ -28,10 +28,9 @@ BEGIN
   DELETE FROM public.income_entries          WHERE user_id = v_uid;
   DELETE FROM public.cash_entries            WHERE user_id = v_uid;
 
-  -- Foto de perfil (bucket avatars, carpeta = id del usuario)
-  DELETE FROM storage.objects
-   WHERE bucket_id = 'avatars'
-     AND (storage.foldername(name))[1] = v_uid::text;
+  -- La foto de perfil (bucket avatars) se borra desde la app con la Storage
+  -- API antes de llamar a esta función: Supabase no permite DELETE directo
+  -- sobre storage.objects.
 
   -- Borra el usuario; profiles y demás tablas caen por ON DELETE CASCADE
   DELETE FROM auth.users WHERE id = v_uid;

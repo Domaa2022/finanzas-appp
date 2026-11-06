@@ -413,7 +413,7 @@ function SeguridadSection() {
 
 const CONFIRM_WORD = 'ELIMINAR'
 
-function EliminarCuentaSection() {
+function EliminarCuentaSection({ userId }: { userId: string }) {
   const [open, setOpen] = useState(false)
   const [texto, setTexto] = useState('')
   const [loading, setLoading] = useState(false)
@@ -428,6 +428,20 @@ function EliminarCuentaSection() {
     if (texto !== CONFIRM_WORD) return
     setLoading(true)
     const supabase = createClient()
+
+    // Borrar la foto de perfil con la Storage API (no se puede desde SQL)
+    const { data: archivos } = await supabase.storage.from('avatars').list(userId)
+    if (archivos && archivos.length > 0) {
+      const { error: stErr } = await supabase.storage
+        .from('avatars')
+        .remove(archivos.map(f => `${userId}/${f.name}`))
+      if (stErr) {
+        toast.error('No se pudo eliminar la foto de perfil')
+        setLoading(false)
+        return
+      }
+    }
+
     const { error } = await supabase.rpc('eliminar_mi_cuenta')
 
     if (error) {
@@ -525,7 +539,7 @@ export default function ConfiguracionClientPage({ profile, userId }: Props) {
 
       <SeguridadSection />
 
-      <EliminarCuentaSection />
+      <EliminarCuentaSection userId={userId} />
     </div>
   )
 }
